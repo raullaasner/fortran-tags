@@ -55,8 +55,8 @@ Usage
 
    If the code is well written with a clean style and the user knows whether they are searching for a subroutine or a function, the search can be sped up using the following functions, which employ a simpler regex pattern and search specifically for a subroutine or a function:
    * `fortran-find-proc-calls-sub` - searches only for subroutine calls using the search pattern <code>^&nbsp;\*call&nbsp;X&nbsp;\*([(&]|$)</code>, where `X` is the word under the cursor.
-   * `fortran-find-proc-calls-func` - searches only for function calls, excluding type-bound procedures, using the search pattern <code>[=+/\*(&\-]&nbsp;\*X&nbsp;\*[(&]</code>
-   * `fortran-find-proc-calls-type` - searches only for type-bound procedures using <code>%X&nbsp;\*[(&]</code>
+   * `fortran-find-proc-calls-func` - searches only for function calls, excluding type-bound procedures, using the search pattern <code>[=+/\*(&\-]&nbsp;\*X&nbsp;\*[(&]</code>.
+   * `fortran-find-proc-calls-type` - searches only for type-bound procedures using <code>%X&nbsp;\*[(&]</code>.
 
    These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
 
