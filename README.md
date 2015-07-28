@@ -36,9 +36,9 @@ Usage
    
    (Why not create an alias for this?) When adding, removing, or modifying the source files only minimal changes are made to the tags file. The structure of the tags file is explained at the beginning of `fortran-tags.py`.
 
-2. The Elisp command `fortran-find-tag` tries to find the definition of the word under the cursor. It first searches for the definition in the present scope. If not found, it expands the search scope, tries again, and if still not found, keeps expanding the scope until searching at the module level. If the definition is not found in the current module, the search expands to the module wide variables and procedures of all other modules. If more than 1 match was found, `fortran-goto-next` can be used to cycle through all the matches. If a match was found in the current module, then the other modules are not searched in because in principle this has to be the correct match. An exception can occur when using operator overloading (see below). If one wishes, one can always force a global search by issuing fortran-goto-next even if just 1 match was found.
+2. The Elisp command `fortran-find-tag` tries to find the definition of the word under the cursor. It first searches for the definition in the present scope. If not found, it expands the search scope, tries again, and if still not found, keeps expanding the scope until searching at the module level. If the definition is not found in the current module, the search expands to the module wide variables and procedures of all other modules. If more than 1 match was found, `fortran-goto-next` can be used to cycle through all the matches. If a match was found in the current module, then the other modules are not searched in because, in principle, this has to be the correct match. An exception can occur when using operator overloading (see below). If one wishes, a global search can always be forced by issuing `fortran-goto-next` even if just 1 match was found.
 
-3. The location of the tags file is determined with the first issuance of `fortran-find-tag` or one can put
+3. The location of the tags file is determined with the first issuance of `fortran-find-tag` or by putting
 
    ```emacs-lisp
    (setq fortran-tags-path "~/my-project/FORTAGS")
@@ -97,11 +97,11 @@ Limitations
 
 * If the result variable of a function is defined using both the `result` keyword and a dummy variable, only the first one counts as a definition. It is assumed that the return type is declared on the same line as function declaration.
 
-* If a procedure is overloaded using multiple interface blocks which are scattered over different modules, one of which is the current module, then only the definition in the current module is reached. In such a situation, one can invoke `fortran-goto-next` which always performs a global search. If no match was found in the current module, then `fortran-find-tag` always finds all of them.
+* If a procedure is overloaded using multiple interface blocks which are scattered over different modules, one of which is the current module, then only the definition in the current module is reached. In such a situation, one can invoke `fortran-goto-next`, which always performs a global search. If no match was found in the current module, then `fortran-find-tag` always finds all of them.
 
-* It is not recommended to end subprograms with a bare `end` keyword (not followed by, .e.g., `subroutine`). It will often work but we can't guarantee all cases.
+* It is recommended not to end subprograms with a bare `end` (not followed by, .e.g., `subroutine`). It will often work but we can't guarantee all cases.
 
-* Syntax such as `real*8` is not recognized. Some old source files may thus appear as devoid of declarations.
+* Syntax such as `real*8` is not recognized. Some old source files may thus appear to be devoid of declarations.
 
 * Fortran-tags is unable to correctly handle the `#include` and `include` directives. The generated tags file might not have the correct contents.
 
