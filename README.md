@@ -58,8 +58,7 @@ Usage
    * `fortran-find-proc-calls-func` - searches only for function calls, excluding type-bound procedures, using the search pattern <code>[=+/\*(&\-]&nbsp;\*X&nbsp;\*[(&]</code>
    * `fortran-find-proc-calls-type` - searches only for type-bound procedures using <code>%X&nbsp;\*[(&]</code>
 
-   These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and  
-   <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
+   These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
 
 6. As a suggestion, one might wish to include the following key bindings in the Emacs configuration file:
 
