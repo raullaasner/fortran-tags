@@ -8,6 +8,13 @@ Brief description
 
 Fortran-tags is a Fortran source code indexing tool with the main purpose of finding the definition of any variable or procedure. It is able to correctly locate all global and local variables and is expected to work with any Fortran 2008 conforming code with some minor exceptions as mentioned below. Fortran-tags is designed to be used with the Emacs text editor in a Linux environment. A prerequisite for using is Python 3.
 
+Downloading
+-----------
+
+* The official versioned releases are available [here](https://github.com/raullaasner/fortran-tags/releases).
+* The latest stable development code is available [here](https://github.com/raullaasner/fortran-tags/archive/master.zip).
+* For importing the repository, issue `git clone https://github.com/raullaasner/fortran-tags.git`.
+
 Installation
 ------------
 
