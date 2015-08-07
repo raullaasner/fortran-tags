@@ -118,6 +118,11 @@ Troubleshooting
 
 A good place to bring up any issues is https://github.com/raullaasner/fortran-tags/issues.
 
+Call for developers
+-------------------
+
+Any help for porting this to other platforms is most welcome.
+
 License
 -------
 
