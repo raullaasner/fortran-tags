@@ -18,10 +18,17 @@ Downloading
 Installation
 ------------
 
-1. Include `fortran-tags.el` in your Emacs configuration file.
+1. Include `fortran-tags.el` in your Emacs configuration file,
 
    ```emacs-lisp
    (load-file "<path-to>/fortran-tags.el")
+   ```
+
+   Alternatively, if `fortran-tags.el` is in a standard location such as `~/.emacs.d/lisp~`,
+   
+   ```emacs-lisp
+   ;; (add-to-list 'load-path "~/.emacs.d/lisp") ; if necessary
+   (require 'fortran-tags)
    ```
    
 2. Include `fortran-tags.py` in your PATH.

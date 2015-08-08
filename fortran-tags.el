@@ -296,3 +296,5 @@ procedures)."
   "Search only for calls to a type-bound procedure."
   (interactive)
   (fortran-find-proc-calls "type-bound"))
+
+(provide 'fortran-tags)
