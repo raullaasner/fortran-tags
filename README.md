@@ -64,7 +64,7 @@ Usage
    
    into a project related configuration file. The tags file is read from disk each time `fortran-find-tag` is invoked (searches are based on `grep`). Thus, when the tags file is regenerated the definitions are instantly up to date without restarting the editor.
 
-4. `fortran-pop-tag-mark` goes back to the position where `fortran-find-tag` was last invoked (works repeatedly).
+4. `fortran-pop-tag-mark` goes back to the previous position (works repeatedly).
 
 5. `fortran-find-proc-calls` finds all calls to the procedure under the cursor. The results can then be cycled through using `fortran-goto-next`. This function is not perfect and can return some garbage along with the correct results. The reasons are that it
    1. also searches in strings and comments;
@@ -78,7 +78,9 @@ Usage
 
    These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
 
-6. The default key-bindings are
+6. In order to specify the search term from keyboard, place the cursor so that it's not covering any character (_A-Za-z0-9), and invoke any search function, e.g., `fortran-find-tag`. All functions except `fortran-find-proc-calls` are case sensitive.
+
+7. The default key-bindings are
 
    ```
    M-.   fortran-find-tag

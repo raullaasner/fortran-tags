@@ -61,9 +61,11 @@ current version of Fortran-tags."
 	(setq p1 (point))
 	(skip-chars-forward "_A-Za-z0-9")
 	(setq p2 (point))))
-    (if lowercase
-	(downcase (buffer-substring-no-properties p1 p2))
-      (buffer-substring-no-properties p1 p2))))
+    (if (= p1 p2)
+	(read-string "Enter name: ")
+      (if lowercase
+	  (downcase (buffer-substring-no-properties p1 p2))
+	(buffer-substring-no-properties p1 p2)))))
   
 (defun goto-new-position (file line char)
   "Go to the new position determined by FILE LINE CHAR and save
