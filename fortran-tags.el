@@ -37,7 +37,7 @@
 ;;     The scope at the position of the cursor as determined by
 ;;     fortran-find-scope.
 
-(setq VERSION "1.1.6")
+(setq VERSION "1.2.0")
 
 (defun fortran-read-tags ()
   "Interactively return the path of the fortran tags file."
@@ -142,7 +142,7 @@ scope."
 	    (error (concat tags-path " does not exist."))
 	  (error "Incorrect format (regenerate using the current version of Fortran-tags)."))))
   ;; Find the definition
-  (let ((WORD (fortran-word-at-point t)) scope scopes match i j )
+  (let ((WORD (fortran-word-at-point t)) scope scopes match i j)
     (setq alt-positions (list))
     (fortran-find-scope)
     (setq scopes (split-string cur-scope ":"))
@@ -296,5 +296,20 @@ procedures)."
   "Search only for calls to a type-bound procedure."
   (interactive)
   (fortran-find-proc-calls "type-bound"))
+
+(define-minor-mode fortran-tags-mode
+  "Minor mode providing functions for Fortran source code indexing."
+  :lighter " FT"
+  :keymap (let ((map (make-sparse-keymap)))
+	    (define-key map (kbd "M-.") 'fortran-find-tag)
+	    (define-key map (kbd "M-*") 'fortran-pop-tag-mark)
+	    (define-key map (kbd "M-n") 'fortran-goto-next)
+	    (define-key map (kbd "M-s g") 'fortran-find-proc-calls)
+	    (define-key map (kbd "M-s s") 'fortran-find-proc-calls-sub)
+	    (define-key map (kbd "M-s f") 'fortran-find-proc-calls-func)
+	    (define-key map (kbd "M-s t") 'fortran-find-proc-calls-type)
+	    map))
+
+(add-hook 'f90-mode-hook 'fortran-tags-mode)
 
 (provide 'fortran-tags)

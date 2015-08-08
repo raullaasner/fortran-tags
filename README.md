@@ -78,19 +78,19 @@ Usage
 
    These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
 
-6. As a suggestion, one might wish to include the following key bindings in the Emacs configuration file:
+6. The default key-bindings are
 
-   ```emacs-lisp
-   (add-hook 'f90-mode-hook
-             (lambda ()
-               (local-set-key (kbd "M-.") 'fortran-find-tag)
-               (local-set-key (kbd "M-*") 'fortran-pop-tag-mark)
-               (local-set-key (kbd "M-n") 'fortran-goto-next)
-               (local-set-key (kbd "M-s g") 'fortran-find-proc-calls)
-               (local-set-key (kbd "M-s s") 'fortran-find-proc-calls-sub)
-               (local-set-key (kbd "M-s f") 'fortran-find-proc-calls-func)
-               (local-set-key (kbd "M-s t") 'fortran-find-proc-calls-type)))
    ```
+   M-.   fortran-find-tag
+   M-*   fortran-pop-tag-mark
+   M-n   fortran-goto-next
+   M-s g fortran-find-proc-calls
+   M-s s fortran-find-proc-calls-sub
+   M-s f fortran-find-proc-calls-func
+   M-s t fortran-find-proc-calls-type
+   ```
+
+   These can be disabled by turning off `fortran-tags-mode`.
 
 Limitations
 -----------
