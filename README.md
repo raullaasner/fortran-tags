@@ -31,7 +31,11 @@ Installation
    (require 'fortran-tags)
    ```
    
-2. Include `fortran-tags.py` in your PATH.
+2. Include `fortran-tags.py` in your PATH. If Emacs can't find `fortran-tags.py`, try
+
+   ```emacs-lisp
+   (setenv "PATH" (concat "<dir-containing-fortran-tags.py>:" (getenv "PATH")))
+   ```
 
 Usage
 -----
