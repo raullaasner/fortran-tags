@@ -24,10 +24,10 @@ Installation
    (load-file "<path-to>/fortran-tags.el")
    ```
 
-   Alternatively, if `fortran-tags.el` is in a standard location such as `~/.emacs.d/lisp~`,
+   Alternatively, if `fortran-tags.el` is in a standard location such as `~/.emacs.d/lisp`,
    
    ```emacs-lisp
-   ;; (add-to-list 'load-path "~/.emacs.d/lisp") ; if necessary
+   ;;(add-to-list 'load-path "~/.emacs.d/lisp")
    (require 'fortran-tags)
    ```
    
