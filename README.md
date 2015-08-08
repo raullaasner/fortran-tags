@@ -78,7 +78,7 @@ Usage
 
    These specialized searches are all case sensitive, while the general search with `fortran-find-proc-calls` is case insensitive and uses the search patterns <code>(^|[;&])&nbsp;\*call&nbsp;+X&nbsp;\*([(&;\!]|$)</code> (for subroutines) and <code>([=+/\*(%&-]|^)&nbsp;\*X&nbsp;\*[(&]</code> (for functions).
 
-6. In order to specify the search term from keyboard, place the cursor so that it's not covering any character (_A-Za-z0-9), and invoke any search function, e.g., `fortran-find-tag`. All functions except `fortran-find-proc-calls` are case sensitive.
+6. In order to specify the search term from keyboard, place the cursor so that it's not covering any character (`_A-Za-z0-9`), and invoke any search function, e.g., `fortran-find-tag`. All functions except `fortran-find-proc-calls` are case sensitive.
 
 7. The default key-bindings are
 
