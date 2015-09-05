@@ -448,7 +448,7 @@ if args.generate:
                 print(line_raw)
                 print("AttributeError: {}".format(e))
                 print("If you consider this a bug, please report at")
-                print("sourceforge.net/p/fortrantags/discussion")
+                print("https://github.com/raullaasner/fortran-tags/issues")
                 exit()
     n_processed = len(args.generate) - len(untouched)
     stdout.write("\rProcessing input files ... done ({} file{})\n".\
