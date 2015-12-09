@@ -57,7 +57,7 @@ def clean_string(l):
     # Since there are two delimiters for the character type which can
     # be nested, all combinations need to be considered.
     global lock # lock[0] (lock[1]) is True if the previous line
-                # didn't have matching single (double) quotes
+                # didn't have a matching single (double) quote
     char_symbol = ["'", '"']
     str_length = len(l)
     # If x (x being ', ", or !) is not in l, we define its position to
@@ -98,7 +98,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
     # Whether the current line is a continuation of a
     cont_var = False    # 1) variable definition,
     cont_redef = False  # 2) redefinition,
-    cont_func = False   # 3) function definition.
+    cont_func = False   # 3) function definition,
+    cont_line = False   # 4) any other line.
     in_type = False     # Whether we are currently inside a type
                         # definition. Variable definitions inside a
                         # type definition are ignored.
@@ -116,8 +117,11 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
         line_nr += 1
         if line_raw.lstrip().startswith('#'): continue
         line_raw = line_raw.lower()
-        line = clean_string(line_raw).lstrip()
+        line = clean_string(line_raw).strip()
         if not line: continue
+        if cont_line:
+            cont_line = line.endswith('&')
+            continue
         if find_definitions and not in_type:
             # PART 1 - variables, redefinitions, operator overloading
             m = match('((real|integer|logical|character|complex|class|'
@@ -252,8 +256,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     if scope_count == 1: in_mod = False
             continue
         if line.startswith('end') and \
-           (match('(endsubroutine[ \n]|endfunction[ \n]|endassociate[ \n]'
-                  '|endmodule[ \n]|endprogram[ \n])', line) or line == 'end\n'):
+           (match('(endsubroutine|endfunction|endassociate'
+                  '|endmodule|endprogram) ?', line) or line == 'end'):
             if find_definitions and scope_unused:
                 # Same as above
                 TAGS.append(filepath + ' ' + scope + ' \n')
@@ -271,7 +275,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     name = line.partition('subroutine ')[2]
                 else:
                     name = line.partition(' subroutine ')[2]
-                name = name[:name.find('(')].strip()
+                if '(' in name: name = name[:name.find('(')]
+                name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
                     position = int((m.start()+m.end())/2)
@@ -290,7 +295,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     name = line.partition('function ')[2]
                 else:
                     name = line.partition(' function ')[2]
-                name = name[:name.find('(')].strip()
+                if '(' in name: name = name[:name.find('(')]
+                name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
                     position = int((m.start()+m.end())/2)
@@ -363,6 +369,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 scope_unused = False
             in_type = True
             continue
+        cont_line = line.endswith('&')
     
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--find-scope', action='store_true',
