@@ -124,8 +124,10 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             continue
         if find_definitions and not in_type:
             # PART 1 - variables, redefinitions, operator overloading
-            m = match('((real|integer|logical|character|complex|class|'
-                      'enumerator|external)[ ,([:]|type *\()', line)
+            exceptions = 'real[*]8|complex[*]16|'
+            m = match('(('+exceptions+'real|integer|logical|character|'
+                      'complex|class|enumerator|external)[ ,([:]|type *\()', \
+                      line)
             if (m and not ' function ' in line) or cont_var:
                 # In the following, 'names' contains all the variables
                 # found on the current line.
@@ -275,7 +277,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     name = line.partition('subroutine ')[2]
                 else:
                     name = line.partition(' subroutine ')[2]
-                if '(' in name: name = name[:name.find('(')]
+                for symbol in ('(', '&'):
+                    if symbol in name: name = name[:name.find(symbol)]
                 name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
@@ -295,7 +298,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     name = line.partition('function ')[2]
                 else:
                     name = line.partition(' function ')[2]
-                if '(' in name: name = name[:name.find('(')]
+                for symbol in ('(', '&'):
+                    if symbol in name: name = name[:name.find(symbol)]
                 name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
