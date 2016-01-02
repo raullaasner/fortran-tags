@@ -49,7 +49,7 @@ from os import path, stat
 from re import match, search
 import argparse
 
-VERSION='1.2.0'
+VERSION='1.2.1'
 
 def clean_string(l):
     """Removes strings and comments from the line.
