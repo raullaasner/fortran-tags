@@ -132,6 +132,9 @@ performed by only scanning through variables with the module
 scope."
   (interactive)
   ;; Find the tags file
+  (if (and (boundp 'fortran-tags-path)
+	   (not (file-exists-p fortran-tags-path)))
+      (makunbound 'fortran-tags-path)) ; FORTAGS not present at the old location
   (if (not (boundp 'fortran-tags-path))
       (setq fortran-tags-path (fortran-read-tags)))
   (if (not (boundp 'fortran-tags-version-ok))
