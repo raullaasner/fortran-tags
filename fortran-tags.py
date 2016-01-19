@@ -94,21 +94,22 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
     (find_definitions=False).
     """
     global lock
-    global scope        # Current scope
+    global scope         # Current scope
     # Whether the current line is a continuation of a
-    cont_var = False    # 1) variable definition,
-    cont_redef = False  # 2) redefinition,
-    cont_func = False   # 3) function definition,
-    cont_line = False   # 4) any other line.
-    in_type = False     # Whether we are currently inside a type
-                        # definition. Variable definitions inside a
-                        # type definition are ignored.
-    scope_unused = True # True if there haven't been any definitions
-                        # with the present scope so far.
-    in_mod = False      # Wether we are currently inside a
-                        # module. This helps to set the scope level of
-                        # module wide variables to 0 as explained
-                        # above.
+    cont_var = False     # 1) variable definition,
+    cont_redef = False   # 2) redefinition,
+    cont_func = False    # 3) function definition,
+    cont_line = False    # 4) any other line.
+    in_type = False      # Whether we are currently inside a type
+                         # definition. Variable definitions inside a
+                         # type definition are ignored.
+    in_interface = False # Same but with interfaces.
+    scope_unused = True  # True if there haven't been any definitions
+                         # with the present scope so far.
+    in_mod = False       # Wether we are currently inside a
+                         # module. This helps to set the scope level of
+                         # module wide variables to 0 as explained
+                         # above.
     lock = [False, False]
     scope = ':'
     scope_count = 1
@@ -122,7 +123,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
         if cont_line:
             cont_line = line.endswith('&')
             continue
-        if find_definitions and not in_type:
+        if find_definitions and not in_type and not in_interface:
             # PART 1 - variables, redefinitions, operator overloading
             exceptions = 'real[*]8|complex[*]16|'
             m = match('(('+exceptions+'real|integer|logical|character|'
@@ -234,6 +235,12 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 scope_unused = False
                 continue
         # PART 2 - scope delocalization
+        if line.startswith('end interface') and \
+           line.rstrip() == 'end interface' or line.startswith('endinterface') \
+           and line.rstrip() == 'endinterface':
+            in_interface = False
+            continue
+        if in_interface: continue
         if line.startswith('end '):
             if match('end +(subroutine|function|type|associate'
                      '|module|program)', line):
@@ -241,6 +248,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 # inside a type definition.
                 if in_type:
                     in_type = False
+                elif in_interface:
+                    in_interface = False
                 else:
                     if find_definitions and scope_unused:
                         # If the current procedure doesn't contain any
@@ -372,6 +381,9 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                                    scope, line_nr, position))
                 scope_unused = False
             in_type = True
+            continue
+        if line.startswith('interface') and line.rstrip() == 'interface':
+            in_interface = True
             continue
         cont_line = line.endswith('&')
     

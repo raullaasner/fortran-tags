@@ -97,7 +97,7 @@ Usage
 Limitations
 -----------
 
-* If the definition is not found in the present module but elsewhere, `fortran-find-tag` may return more than one match because it is unable to determine the exact origin of the word under the cursor.
+* If the definition is found not in the present module but elsewhere, `fortran-find-tag` may return more than one match because it is unable to determine the exact origin of the word under the cursor.
 
 * It is assumed that the semicolon and ampersand are not used in highly non-standard ways.
 
