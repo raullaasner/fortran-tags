@@ -47,6 +47,7 @@
 from sys import argv, stdin, stdout
 from os import path, stat
 from re import match, search
+from subprocess import run, PIPE
 import argparse
 
 VERSION='1.2.1'
@@ -97,7 +98,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
     global scope         # Current scope
     # Whether the current line is a continuation of a
     cont_var = False     # 1) variable definition,
-    cont_redef = False   # 2) redefinition,
+    cont_rename = False  # 2) renaming,
     cont_func = False    # 3) function definition,
     cont_line = False    # 4) any other line.
     in_type = False      # Whether we are currently inside a type
@@ -110,7 +111,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                          # module. This helps to set the scope level of
                          # module wide variables to 0 as explained
                          # above.
-    lock = [False, False]
+    lock = [False, False] # Initialize clean_string
     scope = ':'
     scope_count = 1
     line_nr = 0
@@ -124,7 +125,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             cont_line = line.endswith('&')
             continue
         if find_definitions and not in_type and not in_interface:
-            # PART 1 - variables, redefinitions, operator overloading
+            # PART 1 - variables, renamings, operator overloading
             exceptions = 'real[*]8|complex[*]16|'
             m = match('(('+exceptions+'real|integer|logical|character|'
                       'complex|class|enumerator|external)[ ,([:]|type *\()', \
@@ -188,6 +189,15 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                             name = name[:name.find(symbol)]
                     name = name.strip()
                     if name != '&':
+                        # If the current scope is ':' and we are
+                        # looking at a variable declaration, it means
+                        # we are in the program construct but the
+                        # beginning 'program' keyword is missing. In
+                        # this case set scope to
+                        # :fortags_program_scope: manually.
+                        if scope_count == 1:
+                            scope = ':fortags_program_scope:'
+                            scope_count = 2
                         r = '([ ,:&]|^)' + name + '([ ,(\[=!\*\t]|$)'
                         m = search(r, line_raw)
                         position = int((m.start()+m.end())/2)
@@ -202,10 +212,14 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 (('use' in line and line.startswith(('use ', 'use,'))) or \
                  ('associate' in line and \
                   line.startswith(('associate ', 'associate('))))) or \
-                cont_redef:
-                # Redefinitions count as new definitions.
+                cont_rename:
+                # Same comment as above with variable declarations
+                if scope_count == 1:
+                    scope = ':fortags_program_scope:'
+                    scope_count = 2
+                # Renamings count as new definitions.
                 if (line.startswith(('associate ', 'associate('))):
-                    scope += 'associate_construct:'
+                    scope += 'fortags_associate_construct:'
                     scope_count = scope.count(':')
                 names = line.split('=>')
                 for i in range(len(names)-1):
@@ -220,12 +234,16 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                                        scope, line_nr, position))
                     scope_unused = False
                 if line.rstrip()[-1] == '&':
-                    cont_redef = True
+                    cont_rename = True
                 else:
-                    cont_redef = False
+                    cont_rename = False
                 continue
             if match('interface +(?!(operator|assignment|$))', line):
                 # Operator overloading also counts as a new definition.
+                if scope_count == 1:
+                    # Same comment as above with variable declarations.
+                    scope = ':fortags_program_scope:'
+                    scope_count = 2
                 name = line.split(None,2)[1]
                 m = search(' '+name+'([ !]|$)', line_raw)
                 position = int((m.start()+m.end())/2)
@@ -242,7 +260,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             continue
         if in_interface: continue
         if line.startswith('end '):
-            if match('end +(subroutine|function|type|associate'
+            if match('end +(subroutine|function|type|associate|block'
                      '|module|program)', line):
                 # Decrease scope level by one or signal that we are longer
                 # inside a type definition.
@@ -267,7 +285,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     if scope_count == 1: in_mod = False
             continue
         if line.startswith('end') and \
-           (match('(endsubroutine|endfunction|endassociate'
+           (match('(endsubroutine|endfunction|endassociate|endblock'
                   '|endmodule|endprogram) ?', line) or line == 'end'):
             if find_definitions and scope_unused:
                 # Same as above
@@ -384,6 +402,10 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             continue
         if line.startswith('interface') and line.rstrip() == 'interface':
             in_interface = True
+            continue
+        if line.startswith('block') and line.rstrip() == 'block':
+            scope += 'fortags_block_construct:'
+            scope_count = scope.count(':')
             continue
         cont_line = line.endswith('&')
     

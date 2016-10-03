@@ -121,7 +121,7 @@ Limitations
 
 * It is recommended not to end subprograms with a bare `end` (not followed by, .e.g., `subroutine`). It will often work but we can't guarantee all cases.
 
-* Using `*` for specifying the kind is not recommended, but it will work with `real*8` and `complex*16`. You can find them in `exceptions` in fortran-tags.py. Other nonstandard syntax can be included as well, e.g., by modifying `exceptions = 'real[*]8|complex[*]16|integer*8|'`. Or, when dealing with clean code only, one can set `exceptions = ''`.
+* Using `*` for specifying the kind is not recommended, but it will work with `real*8` and `complex*16`. See `exceptions` in fortran-tags.py. Other nonstandard syntax can be included by modifying this variable, e.g., by modifying `exceptions = 'real[*]8|complex[*]16|integer*8|'`. When dealing with clean code only, one can set `exceptions = ''`.
 
 * Fortran-tags is unable to correctly handle the `#include` and `include` directives. The generated tags file might not have the correct contents.
 

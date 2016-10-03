@@ -78,29 +78,30 @@ the current buffer and position."
   (goto-line (string-to-number line))
   (forward-char (string-to-number char)))
 
-(defconst f90-program-block-re-mod
-  (regexp-opt '("program" "module" "subroutine" "function" "submodule" "associate") 'paren)
-  "Regexp used to locate the start/end of a \"subprogram\".")
+(defconst f90-scope-keyword-re
+  (regexp-opt '("program" "module" "subroutine" "function" "submodule" "associate" "block") 'paren)
+  "Regexp used to locate the start/end of a scope.")
 
-(defun f90-beginning-of-subprogram-mod ()
-  "Move point to the beginning of the current subprogram.
+(defun f90-beginning-of-scope ()
+  "Move point to the beginning of the current scope.
 Return (TYPE NAME), or nil if not found."
   (let ((count 1) (case-fold-search t) matching-beg)
-    ;;(beginning-of-line)
     (while (and (> count 0)
-                (re-search-backward f90-program-block-re-mod nil 'move))
+                (re-search-backward f90-scope-keyword-re nil 'move))
       (beginning-of-line)
       (skip-chars-forward " \t0-9")
       (cond ((setq matching-beg (f90-looking-at-program-block-start))
              (setq count (1- count)))
 	    ((f90-looking-at-associate)
-	     (setq matching-beg (list "associate" "associate_construct"))
+	     (setq matching-beg (list "end" "fortags_associate_construct"))
+	     (setq count (1- count)))
+	    ((f90-looking-at-critical) ; Critical or block
+	     (setq matching-beg (list "end" "fortags_block_construct"))
 	     (setq count (1- count)))
             ((f90-looking-at-program-block-end)
              (setq count (1+ count)))))
     (beginning-of-line)
-    (if (zerop count)
-        matching-beg)))
+    (if (zerop count) matching-beg)))
 
 (defun fortran-find-scope ()
   "Set 'cur-scope' to the current scope."
@@ -108,19 +109,34 @@ Return (TYPE NAME), or nil if not found."
   (let ((tmp ""))
     (save-excursion
       (while tmp
-	(setq tmp (f90-beginning-of-subprogram-mod))
+	(setq tmp (f90-beginning-of-scope))
 	(if tmp
 	    (setq cur-scope (concat ":" (downcase (nth 1 tmp)) cur-scope))))))
-  (if (string= "" (shell-command-to-string
-		   (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
-			   fortran-tags-path)))
-      ;; If the scope is not found in the tags file, then it was
-      ;; incorrectly found. If so, perform a more advanced search
-      ;; using fortran-tags.py -s.
+  (if (or (not (save-excursion (nth 1 (f90-beginning-of-scope))))
+	  (string= "" (shell-command-to-string
+		       (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
+			       fortran-tags-path))))
+      ;; i) If (nth 1 (f90-beginning-of-scope)) returns zero, we have
+      ;; zero scope. In this case it is necessary to check whether we
+      ;; are inside the program construct where the beginning
+      ;; 'program' keyword is missing; ii) If the scope is not found
+      ;; in the tags file, then it was incorrectly found. If so,
+      ;; perform a more advanced search using fortran-tags.py -s.
       (let ((tmp-buffer "fortran-tags-tmp-buffer"))
 	(generate-new-buffer tmp-buffer)
-	(call-process-region (point-min) (point)
-			     "fortran-tags.py" nil tmp-buffer nil "-s")
+	(if (save-excursion (nth 1 (f90-beginning-of-scope)))
+	    ;; In case of ii) above, process the input file up to the
+	    ;; current point. The objective is to determine the
+	    ;; current scope.
+	    (call-process-region (point-min) (point)
+				 "fortran-tags.py" nil tmp-buffer nil "-s")
+	  ;; In case of i), process the input file from the current
+	  ;; point onwards. The objective is to find out whether there
+	  ;; is an 'end program' somewhere. If so, cur-scope will be
+	  ;; returned as '\n' (fortran-tags.py starts with ':' and
+	  ;; only returns '\n' is there is an excess 'end' somewhere).
+	  (call-process-region (point) (point-max)
+			       "fortran-tags.py" nil tmp-buffer nil "-s"))
 	(with-current-buffer tmp-buffer
 	  (setq cur-scope (buffer-string)))
 	(kill-buffer tmp-buffer))))
@@ -150,6 +166,11 @@ scope."
   (let ((WORD (fortran-word-at-point t)) scope scopes match i j)
     (setq alt-positions (list))
     (fortran-find-scope)
+    (if (string= cur-scope "\n")
+	;; We are a program construct that didn't start with the
+	;; 'program' keyword. Set cur-scope to :fortags_program_scope:
+	;; manually.
+	(setq cur-scope ":fortags_program_scope:"))
     (setq scopes (split-string cur-scope ":"))
     (catch 'found
       (if (not force-global)
