@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2015 Raul Laasner
+# Copyright (C) 2015-2017 Raul Laasner
 # This file is distributed under the terms of the GNU General Public
 # License, see 'LICENSE' in the root directory of the present
 # distribution or http://gnu.org/copyleft/gpl.txt .
@@ -408,7 +408,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             scope_count = scope.count(':')
             continue
         cont_line = line.endswith('&')
-    
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--find-scope', action='store_true',
                     help='Return the current scope based on text from stdin')

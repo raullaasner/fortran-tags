@@ -1,4 +1,4 @@
-;; Copyright (C) 2015 Raul Laasner
+;; Copyright (C) 2015-2017 Raul Laasner
 ;; This file is distributed under the terms of the GNU General Public
 ;; License, see 'LICENSE' in the root directory of the present
 ;; distribution or http://gnu.org/copyleft/gpl.txt .
@@ -62,11 +62,11 @@ current version of Fortran-tags."
 	(skip-chars-forward "_A-Za-z0-9")
 	(setq p2 (point))))
     (if (= p1 p2)
-	(read-string "Enter name: ")
+	(downcase (read-string "Enter name: "))
       (if lowercase
 	  (downcase (buffer-substring-no-properties p1 p2))
 	(buffer-substring-no-properties p1 p2)))))
-  
+
 (defun goto-new-position (file line char)
   "Go to the new position determined by FILE LINE CHAR and save
 the current buffer and position."
@@ -140,7 +140,7 @@ Return (TYPE NAME), or nil if not found."
 	(with-current-buffer tmp-buffer
 	  (setq cur-scope (buffer-string)))
 	(kill-buffer tmp-buffer))))
-  
+
 (defun fortran-find-tag (&optional force-global)
   "Find the definition of the word under the cursor. If found,
 move to the new position. If force-global is true, the search is
