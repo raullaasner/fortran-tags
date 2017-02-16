@@ -6,16 +6,19 @@
 # distribution or http://gnu.org/copyleft/gpl.txt .
 
 # This script contains two main functions:
-#  1) Generating the tags file. The scope and position of every
-#     variable and procedure are determined. Once the initial tags
-#     file has been generated, only minimal changes are made with
-#     subsequent calls to this function.
+#  1) Generating a tags file. The scope and position of every variable
+#     and procedure are determined. Once the initial tags file has
+#     been generated, subsequent calls produce only minimal changes,
+#     which means that it is cheap to call this function every time a
+#     software project is opened.
 #  2) Finding the current scope. The same function is called as for
-#     generating the tags file except that finding the definitions
-#     parts are turned off. It can be invoked by fortran-find-scope of
+#     generating the tags file except that the definition finding
+#     parts are turned off. It can be invoked by fortran-find-scope in
 #     fortran-tags.el, which provides the buffer contents of a source
 #     file up to the cursor position in the form of stdin and receives
-#     the scope at that position after it has been determined.
+#     the scope at that position after it has been determined. It is
+#     only invoked if fortran-find-scope is unable to find the scope
+#     on its own for some reason.
 
 # FORMAT OF THE TAGS FILE
 #
@@ -145,10 +148,10 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     names = line[line.find('::')+2:].split(',')
                 else:
                     # Any of the following has happened at this point:
-                    # 1) old style was used (no :: in the line); 2) a
+                    # 1) old style was used (no :: on the line); 2) a
                     # keyword was used as a variable; 3) a keyword was
-                    # used as a built-in function (e.g. real(1,8)). In
-                    # any case, this is slow.
+                    # used as a built-in function (e.g.,
+                    # real(1,8)). In any case, this is slow.
                     if m.group()[-1] == '(':
                         line = line[m.end()-1:].lstrip()
                     else:
@@ -168,8 +171,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     names = line.split(',')
                 i = 0
                 while i < len(names):
-                    # Since the names are separated by splitting the
-                    # line at commas, special care needs to be taken
+                    # Since names are separated by splitting the line
+                    # at commas, special care needs to be taken
                     # against multi-dimensional arrays and coarrays.
                     name = names[i]
                     while name.count('(') > name.count(')') or \
@@ -183,8 +186,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                             if '&' in name and name.rstrip()[-1] == '&':
                                 # If the next line continues with the
                                 # initialization of the current
-                                # variable, then don't allow the
-                                # continuation by removing the '&'.
+                                # variable, don't follow the
+                                # continuation.
                                 line = line.rstrip()[:-1]
                             name = name[:name.find(symbol)]
                     name = name.strip()
@@ -407,7 +410,14 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             scope += 'fortags_block_construct:'
             scope_count = scope.count(':')
             continue
-        cont_line = line.endswith('&')
+        # Set cont_line to True if the line ends with an '&'. Note
+        # that line == '&' is not valid Fortran and what must have
+        # happened is that a string was removed from the line by
+        # clean_string, leaving it almost empty. The '&' then marks
+        # the beginning of a line (not continuation) or it marks the
+        # continuation of a variable definition. Either way, we shall
+        # not count it as line continuation.
+        cont_line = line.endswith('&') and not line == '&'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--find-scope', action='store_true',
