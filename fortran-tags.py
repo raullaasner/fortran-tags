@@ -50,7 +50,6 @@
 from sys import argv, stdin, stdout
 from os import path, stat
 from re import match, search
-from subprocess import run, PIPE
 import argparse
 
 VERSION='1.2.1'
