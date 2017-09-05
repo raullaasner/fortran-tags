@@ -386,9 +386,9 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             continue
         if line.startswith(('type,', 'type:')) or \
            (line.startswith('type ') and \
-            not line[5:].lstrip().startswith('(')):
-           # 'type' is special because it can both declare a variable
-           # and define a new type.
+            not line[5:].lstrip().startswith(('(', 'is'))):
+            # 'type' is special because it can both declare a variable
+            # and define a new type.
             if find_definitions:
                 if ':' in line:
                     name = line[line.find(':')+2:].strip()
