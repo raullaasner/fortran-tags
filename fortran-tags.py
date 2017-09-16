@@ -254,6 +254,25 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                                    scope, line_nr, position))
                 scope_unused = False
                 continue
+        # Treat procedure renamings inside a type definition
+        # separately.
+        if in_type and '=>' in line:
+            # Exclude pointer initializations
+            if search(',[ ]*pointer[ ]*( |[ ]*::)', line): continue
+            name = line.split('=>',1)[0].rstrip()
+            if '::' in name: name = name.split('::',1)[1]
+            if ' ' in name: name = name.rsplit(' ',1)[1]
+            m = search('( |[ ]*::)'+name+'[ ]*=>', line_raw)
+            # If the search failed, there was something weird in the
+            # source code (maybe a preprocessor macro that
+            # Fortran-tags couldn't handle).
+            if m is None: continue
+            position = int((m.start()+m.end())/2)
+            TAGS.append('{} {} {} {} {} {}\n'.\
+                        format(filepath, 0, name, \
+                               scope, line_nr, position))
+            scope_unused = False
+            continue
         # PART 2 - scope delocalization
         if line.startswith('end interface') and \
            line.rstrip() == 'end interface' or line.startswith('endinterface') \
@@ -390,7 +409,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             # 'type' is special because it can both declare a variable
             # and define a new type.
             line0 = line[5:].lstrip()
-            if line0.startswith('is'): # 'select type' construct
+            # Ignore 'select type' construct
+            if line0.startswith('is'):
                 line0 = line0[2:].lstrip()
                 if line0.startswith('('): continue
             if find_definitions:
