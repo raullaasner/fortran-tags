@@ -259,6 +259,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
         if in_type and '=>' in line:
             # Exclude pointer initializations
             if search(',[ ]*pointer[ ]*( |[ ]*::)', line): continue
+            # Exclude operator(...) type overloading.
+            if ')' in line: continue
             name = line.split('=>',1)[0].rstrip()
             if '::' in name: name = name.split('::',1)[1]
             if ' ' in name: name = name.rsplit(' ',1)[1]
