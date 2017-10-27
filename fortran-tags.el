@@ -281,6 +281,8 @@ for subroutines or functions."
 		 (shell-command-to-string
 		  (concat "LC_ALL=C egrep -Hni \"([=+/*(%%&\-]|^) *" WORD
 			  " *[(&]\" " src-file-paths " | cut -f1,2 -d:")))))))
+    (if (string-match-p (regexp-quote "No such file or directory") match)
+	(error "A file that was previously present seems to be missing. Try regenerating the tags file."))
     (if (not (string= "" match))
 	(let ((matches (delete "" (split-string match "\n"))) (files "")
 	      (num-files ""))

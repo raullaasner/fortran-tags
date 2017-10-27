@@ -25,12 +25,12 @@ Installation
    ```
 
    Alternatively, if `fortran-tags.el` is in a standard location such as `~/.emacs.d/lisp`,
-   
+
    ```emacs-lisp
    ;;(add-to-list 'load-path "~/.emacs.d/lisp")
    (require 'fortran-tags)
    ```
-   
+
 2. Include `fortran-tags.py` in your PATH. If Emacs can't find `fortran-tags.py`, try
 
    ```emacs-lisp
@@ -45,13 +45,13 @@ Usage
    ```
    fortran-tags.py -g FILE [FILE ...]
    ```
-   
+
    Default is to create a file named `FORTAGS` in the current directory but this can be changed with the option `-o`. For including all the source directories and subdirectories of the project, one can issue, for example,
-   
+
    ```
    find -name '*.f90' | xargs fortran-tags.py -g
    ```
-   
+
    (Why not create an alias for this?) When adding, removing, or modifying the source files only minimal changes are made to the tags file. The structure of the tags file is explained at the beginning of `fortran-tags.py`.
 
 2. The Elisp command `fortran-find-tag` tries to find the definition of the word under the cursor. It first searches for the definition in the present scope. If not found, it expands the search scope, tries again, and if still not found, keeps expanding the scope until searching at the module level. If the definition is not found in the current module, the search expands to the module wide variables and procedures of all other modules. If more than 1 match was found, `fortran-goto-next` can be used to cycle through all the matches. If a match was found in the current module, then the other modules are not searched in because, in principle, this has to be the correct match. An exception can occur when using operator overloading (see below). If one wishes, a global search can always be forced by issuing `fortran-goto-next` even if just 1 match was found.
@@ -61,7 +61,7 @@ Usage
    ```emacs-lisp
    (setq fortran-tags-path "~/my-project/FORTAGS")
    ```
-   
+
    into a project related configuration file. The tags file is read from disk each time `fortran-find-tag` is invoked (searches are based on `grep`). Thus, when the tags file is regenerated the definitions are instantly up to date without restarting the editor.
 
 4. `fortran-pop-tag-mark` goes back to the previous position (works repeatedly).
@@ -108,7 +108,7 @@ Limitations
                       & 3, 4], b
    integer :: c = 5
    ```
-   
+
    `a` and `c` are correctly written into the tags file, while `b` is not found. `a` could also be a scalar with some complex initialization expression.
 
 * Submodules are not supported.
