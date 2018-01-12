@@ -37,7 +37,7 @@
 ;;     The scope at the position of the cursor as determined by
 ;;     fortran-find-scope.
 
-(setq VERSION "1.2.1")
+(setq VERSION "1.4.0")
 
 (defun fortran-read-tags ()
   "Interactively return the path of the fortran tags file."
