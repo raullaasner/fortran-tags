@@ -134,7 +134,7 @@ Return (TYPE NAME), or nil if not found."
 	  ;; point onwards. The objective is to find out whether there
 	  ;; is an 'end program' somewhere. If so, cur-scope will be
 	  ;; returned as '\n' (fortran-tags.py starts with ':' and
-	  ;; only returns '\n' is there is an excess 'end' somewhere).
+	  ;; only returns '\n' if there is an excess 'end' somewhere).
 	  (call-process-region (point) (point-max)
 			       "fortran-tags.py" nil tmp-buffer nil "-s"))
 	(with-current-buffer tmp-buffer
@@ -325,6 +325,33 @@ procedures)."
   (interactive)
   (fortran-find-proc-calls "type-bound"))
 
+(defun fortran-procedures-in-buffer()
+  "List all subroutines and functions of this buffer."
+  (interactive)
+  (save-excursion
+    (goto-line 0)
+    (let ((endproc-regex "^ *end +\\(subroutine\\|function\\)")
+	  (begin-regex "\\(^\\| *\\)\\(subroutine\\|function\\) +\\")
+	  (end-regex " *\\(\(\\|&\\)"))
+      (setq matches (list))
+      (while (re-search-forward endproc-regex nil t)
+	(setq matches
+	      (append matches
+		      (list
+		       (replace-regexp-in-string
+			endproc-regex "" (thing-at-point 'line t))))))
+      ;; Replace newlines with '|' symbols for the regexp
+      (setq procedures
+	    (replace-regexp-in-string "\n" "\\\\|" (format "%s" matches)))
+      (setq procedures
+	    (replace-regexp-in-string "\\\\|)" "\\\\)" procedures))
+      ;; Remove all spaces
+      (setq procedures (replace-regexp-in-string " " "" procedures))
+      ;; Add beginning and end parts of the regexp
+      (setq procedures (concat begin-regex procedures))
+      (setq procedures (concat procedures end-regex))
+      (occur procedures))))
+
 (define-minor-mode fortran-tags-mode
   "Minor mode providing functions for Fortran source code indexing."
   :lighter " FT"
@@ -336,6 +363,7 @@ procedures)."
 	    (define-key map (kbd "M-s s") 'fortran-find-proc-calls-sub)
 	    (define-key map (kbd "M-s f") 'fortran-find-proc-calls-func)
 	    (define-key map (kbd "M-s t") 'fortran-find-proc-calls-type)
+	    (define-key map (kbd "M-s d") 'fortran-procedures-in-buffer)
 	    map))
 
 (add-hook 'f90-mode-hook 'fortran-tags-mode)

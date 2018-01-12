@@ -62,7 +62,19 @@ Usage
    (setq fortran-tags-path "~/my-project/FORTAGS")
    ```
 
-   into a project related configuration file. The tags file is read from disk each time `fortran-find-tag` is invoked (searches are based on `grep`). Thus, when the tags file is regenerated the definitions are instantly up to date without restarting the editor.
+   into a project related configuration file. The tags file is read from the hard drive each time `fortran-find-tag` is invoked (searches are based on `grep`). Thus, when the tags file is regenerated the definitions are instantly up to date without restarting the editor.
+
+   A simple elisp function to regenerate the tags file is
+
+   ```emacs-lisp
+   (defun generate-fortran-tags (path)
+     (compile
+      (concat "find " path
+              " -name \"*.f90\" | xargs fortran-tags.py -o " path "/FORTAGS -g"))
+     (setq fortran-tags-path (concat path "/FORTAGS")))
+   ```
+
+   where path is the root directory of a project. A call to this function could be included in a project related configuration file that is always run when a project is opened.
 
 4. `fortran-pop-tag-mark` goes back to the previous position (works repeatedly).
 
@@ -80,7 +92,9 @@ Usage
 
 6. In order to specify the search term from keyboard, place the cursor so that it's not covering any character (`_A-Za-z0-9`), and invoke any search function, e.g., `fortran-find-tag`. All functions except `fortran-find-proc-calls` are case sensitive.
 
-7. The default key-bindings are
+7. `fortran-procedures-in-buffer` lists all subroutines and functions in the current buffer.
+
+8. The default key-bindings are
 
    ```
    M-.   fortran-find-tag
@@ -90,6 +104,7 @@ Usage
    M-s s fortran-find-proc-calls-sub
    M-s f fortran-find-proc-calls-func
    M-s t fortran-find-proc-calls-type
+   M-s d fortran-procedures-in-buffer
    ```
 
    These can be disabled by turning off `fortran-tags-mode`.
