@@ -57,21 +57,21 @@ current version of Fortran-tags."
   (let (p1 p2)
     (save-excursion
       (progn
-	(skip-chars-backward "_A-Za-z0-9")
-	(setq p1 (point))
-	(skip-chars-forward "_A-Za-z0-9")
-	(setq p2 (point))))
-    (if (= p1 p2)
-	(downcase (read-string "Enter name: "))
-      (if lowercase
-	  (downcase (buffer-substring-no-properties p1 p2))
-	(buffer-substring-no-properties p1 p2)))))
+        (skip-chars-backward "_A-Za-z0-9")
+        (setq p1 (point))
+        (skip-chars-forward "_A-Za-z0-9")
+        (setq p2 (point))))
+    (cond ((= p1 p2)
+           (downcase (read-string "Enter name: ")))
+          (lowercase
+           (downcase (buffer-substring-no-properties p1 p2)))
+          (t (buffer-substring-no-properties p1 p2)))))
 
 (defun goto-new-position (file line char)
   "Go to the new position determined by FILE LINE CHAR and save
 the current buffer and position."
-  (if (not (boundp 'fortran-buffers)) (setq fortran-buffers (list)))
-  (if (not (boundp 'fortran-positions)) (setq fortran-positions (list)))
+  (unless (boundp 'fortran-buffers) (setq fortran-buffers (list)))
+  (unless (boundp 'fortran-positions) (setq fortran-positions (list)))
   (push (current-buffer) fortran-buffers)
   (push (point) fortran-positions)
   (find-file file)
@@ -151,10 +151,10 @@ scope."
   (if (and (boundp 'fortran-tags-path)
            (not (file-exists-p fortran-tags-path)))
       (makunbound 'fortran-tags-path)) ; FORTAGS not present at the old location
-  (if (not (boundp 'fortran-tags-path))
-      (setq fortran-tags-path (fortran-read-tags)))
-  (if (not (boundp 'fortran-tags-version-ok))
-      (setq fortran-tags-version-ok (check-fortran-tags-version)))
+  (unless (boundp 'fortran-tags-path)
+    (setq fortran-tags-path (fortran-read-tags)))
+  (unless (boundp 'fortran-tags-version-ok)
+    (setq fortran-tags-version-ok (check-fortran-tags-version)))
   (if (and (not fortran-tags-version-ok)
            (not (check-fortran-tags-version))) ; Recheck if changed
       (let ((tags-path fortran-tags-path))
@@ -231,13 +231,13 @@ scope."
 else force fortran-find-tag to search only through module level
 variables."
   (interactive)
-  (if (not (boundp 'alt-positions)) (setq alt-positions (list)))
+  (unless (boundp 'alt-positions) (setq alt-positions (list)))
   (if (not alt-positions) (fortran-find-tag t)
     (let ((x (nth alt-positions-counter alt-positions)))
       (goto-new-position (nth 0 x) (nth 1 x) (nth 2 x))
       (setq alt-positions-counter (1+ alt-positions-counter))
-      (if (= alt-positions-counter (length alt-positions))
-	  (setq alt-positions-counter 0)))))
+      (when (= alt-positions-counter (length alt-positions))
+        (setq alt-positions-counter 0)))))
 
 (defun fortran-find-proc-calls (&optional fast-search)
   "Find all calls to the procedure under the cursor. If found,
@@ -246,43 +246,43 @@ can be cycled through with fortran-goto-next. Default is to use a
 general regex, while fast-search determines a specialized regex
 for subroutines or functions."
   (interactive)
-  (if (not (boundp 'fortran-tags-path))
-      (setq fortran-tags-path (fortran-read-tags)))
+  (unless (boundp 'fortran-tags-path)
+    (setq fortran-tags-path (fortran-read-tags)))
   (let ((WORD (fortran-word-at-point))
-	(match "")
-	(src-file-paths
-	 (shell-command-to-string
-	  (concat
-	   "head -n 2 " fortran-tags-path " | tail -n 1 | xargs echo -n"))))
-    (if (not (string= "" WORD))
-	(cond
-	 ((string= "subroutine" fast-search)
-	  (setq match
-		(shell-command-to-string
-		 (concat "LC_ALL=C egrep -Hn \"^ *call " WORD
-			 " *([(&]|$)\" " src-file-paths
-			 " | cut -f1,2 -d:"))))
-	 ((string= "function" fast-search)
-	  (setq match
-		 (shell-command-to-string
-		  (concat "LC_ALL=C egrep -Hn \"[=+/*(&\-] *" WORD
-			  " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
-	 ((string= "type-bound" fast-search)
-	  (setq match
-		 (shell-command-to-string
-		  (concat "LC_ALL=C egrep -Hn \"%" WORD
-			  " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
-	 (t
-	  (setq match
-		(concat
-		 (shell-command-to-string
-		  (concat "LC_ALL=C egrep -Hni \"(^|[;&]) *call +" WORD
-			  " *([(&;\!]|$)\" " src-file-paths " | cut -f1,2 -d:"))
-		 (shell-command-to-string
-		  (concat "LC_ALL=C egrep -Hni \"([=+/*(%%&\-]|^) *" WORD
-			  " *[(&]\" " src-file-paths " | cut -f1,2 -d:")))))))
-    (if (string-match-p (regexp-quote "No such file or directory") match)
-	(error "A file that was previously present seems to be missing. Try regenerating the tags file."))
+        (match "")
+        (src-file-paths
+         (shell-command-to-string
+          (concat
+           "head -n 2 " fortran-tags-path " | tail -n 1 | xargs echo -n"))))
+    (unless (string= WORD "")
+      (cond
+       ((string= "subroutine" fast-search)
+        (setq match
+              (shell-command-to-string
+               (concat "LC_ALL=C egrep -Hn \"^ *call " WORD
+                       " *([(&]|$)\" " src-file-paths
+                       " | cut -f1,2 -d:"))))
+       ((string= "function" fast-search)
+        (setq match
+              (shell-command-to-string
+               (concat "LC_ALL=C egrep -Hn \"[=+/*(&\-] *" WORD
+                       " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
+       ((string= "type-bound" fast-search)
+        (setq match
+              (shell-command-to-string
+               (concat "LC_ALL=C egrep -Hn \"%" WORD
+                       " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
+       (t
+        (setq match
+              (concat
+               (shell-command-to-string
+                (concat "LC_ALL=C egrep -Hni \"(^|[;&]) *call +" WORD
+                        " *([(&;\!]|$)\" " src-file-paths " | cut -f1,2 -d:"))
+               (shell-command-to-string
+                (concat "LC_ALL=C egrep -Hni \"([=+/*(%%&\-]|^) *" WORD
+                        " *[(&]\" " src-file-paths " | cut -f1,2 -d:")))))))
+    (when (string-match-p (regexp-quote "No such file or directory") match)
+      (error "A file that was previously present seems to be missing. Try regenerating the tags file."))
     (if (not (string= "" match))
         (let ((matches (delete "" (split-string match "\n"))) (files "")
               (num-files ""))
