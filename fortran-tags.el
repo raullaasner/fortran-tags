@@ -43,14 +43,14 @@
   "Interactively return the path of the fortran tags file."
   (interactive)
   (read-file-name "Read tags file (default FORTAGS): " default-directory
-		  (expand-file-name "FORTAGS" default-directory) t))
+                  (expand-file-name "FORTAGS" default-directory) t))
 
 (defun check-fortran-tags-version ()
   "Return true if the first line of the tags file matches the
 current version of Fortran-tags."
   (string= (concat VERSION "\n")
-	   (shell-command-to-string
-	    (concat "head -n 1 " fortran-tags-path))))
+           (shell-command-to-string
+            (concat "head -n 1 " fortran-tags-path))))
 
 (defun fortran-word-at-point (&optional lowercase)
   "Return the Fortran word at point (in lowercase if requested)."
@@ -92,12 +92,12 @@ Return (TYPE NAME), or nil if not found."
       (skip-chars-forward " \t0-9")
       (cond ((setq matching-beg (f90-looking-at-program-block-start))
              (setq count (1- count)))
-	    ((f90-looking-at-associate)
-	     (setq matching-beg (list "end" "fortags_associate_construct"))
-	     (setq count (1- count)))
-	    ((f90-looking-at-critical) ; Critical or block
-	     (setq matching-beg (list "end" "fortags_block_construct"))
-	     (setq count (1- count)))
+            ((f90-looking-at-associate)
+             (setq matching-beg (list "end" "fortags_associate_construct"))
+             (setq count (1- count)))
+            ((f90-looking-at-critical) ; Critical or block
+             (setq matching-beg (list "end" "fortags_block_construct"))
+             (setq count (1- count)))
             ((f90-looking-at-program-block-end)
              (setq count (1+ count)))))
     (beginning-of-line)
@@ -109,13 +109,13 @@ Return (TYPE NAME), or nil if not found."
   (let ((tmp ""))
     (save-excursion
       (while tmp
-	(setq tmp (f90-beginning-of-scope))
-	(if tmp
-	    (setq cur-scope (concat ":" (downcase (nth 1 tmp)) cur-scope))))))
+        (setq tmp (f90-beginning-of-scope))
+        (if tmp
+            (setq cur-scope (concat ":" (downcase (nth 1 tmp)) cur-scope))))))
   (if (or (not (save-excursion (nth 1 (f90-beginning-of-scope))))
-	  (string= "" (shell-command-to-string
-		       (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
-			       fortran-tags-path))))
+          (string= "" (shell-command-to-string
+                       (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
+                               fortran-tags-path))))
       ;; i) If (nth 1 (f90-beginning-of-scope)) returns zero, we have
       ;; zero scope. In this case it is necessary to check whether we
       ;; are inside the program construct where the beginning
@@ -123,23 +123,23 @@ Return (TYPE NAME), or nil if not found."
       ;; in the tags file, then it was incorrectly found. If so,
       ;; perform a more advanced search using fortran-tags.py -s.
       (let ((tmp-buffer "fortran-tags-tmp-buffer"))
-	(generate-new-buffer tmp-buffer)
-	(if (save-excursion (nth 1 (f90-beginning-of-scope)))
-	    ;; In case of ii) above, process the input file up to the
-	    ;; current point. The objective is to determine the
-	    ;; current scope.
-	    (call-process-region (point-min) (point)
-				 "fortran-tags.py" nil tmp-buffer nil "-s")
-	  ;; In case of i), process the input file from the current
-	  ;; point onwards. The objective is to find out whether there
-	  ;; is an 'end program' somewhere. If so, cur-scope will be
-	  ;; returned as '\n' (fortran-tags.py starts with ':' and
-	  ;; only returns '\n' if there is an excess 'end' somewhere).
-	  (call-process-region (point) (point-max)
-			       "fortran-tags.py" nil tmp-buffer nil "-s"))
-	(with-current-buffer tmp-buffer
-	  (setq cur-scope (buffer-string)))
-	(kill-buffer tmp-buffer))))
+        (generate-new-buffer tmp-buffer)
+        (if (save-excursion (nth 1 (f90-beginning-of-scope)))
+            ;; In case of ii) above, process the input file up to the
+            ;; current point. The objective is to determine the
+            ;; current scope.
+            (call-process-region (point-min) (point)
+                                 "fortran-tags.py" nil tmp-buffer nil "-s")
+          ;; In case of i), process the input file from the current
+          ;; point onwards. The objective is to find out whether there
+          ;; is an 'end program' somewhere. If so, cur-scope will be
+          ;; returned as '\n' (fortran-tags.py starts with ':' and
+          ;; only returns '\n' if there is an excess 'end' somewhere).
+          (call-process-region (point) (point-max)
+                               "fortran-tags.py" nil tmp-buffer nil "-s"))
+        (with-current-buffer tmp-buffer
+          (setq cur-scope (buffer-string)))
+        (kill-buffer tmp-buffer))))
 
 (defun fortran-find-tag (&optional force-global)
   "Find the definition of the word under the cursor. If found,
@@ -149,82 +149,82 @@ scope."
   (interactive)
   ;; Find the tags file
   (if (and (boundp 'fortran-tags-path)
-	   (not (file-exists-p fortran-tags-path)))
+           (not (file-exists-p fortran-tags-path)))
       (makunbound 'fortran-tags-path)) ; FORTAGS not present at the old location
   (if (not (boundp 'fortran-tags-path))
       (setq fortran-tags-path (fortran-read-tags)))
   (if (not (boundp 'fortran-tags-version-ok))
       (setq fortran-tags-version-ok (check-fortran-tags-version)))
   (if (and (not fortran-tags-version-ok)
-	   (not (check-fortran-tags-version))) ; Recheck if changed
+           (not (check-fortran-tags-version))) ; Recheck if changed
       (let ((tags-path fortran-tags-path))
-	(makunbound 'fortran-tags-path)
-	(if (not (file-exists-p tags-path))
-	    (error (concat tags-path " does not exist."))
-	  (error "Incorrect format (regenerate using the current version of Fortran-tags)."))))
+        (makunbound 'fortran-tags-path)
+        (if (file-exists-p tags-path)
+            (error "Incorrect format (regenerate using the current version of Fortran-tags).")
+          (error (concat tags-path " does not exist.")))))
   ;; Find the definition
   (let ((WORD (fortran-word-at-point t)) scope scopes match i j)
     (setq alt-positions (list))
     (fortran-find-scope)
     (if (string= cur-scope "\n")
-	;; We are a program construct that didn't start with the
-	;; 'program' keyword. Set cur-scope to :fortags_program_scope:
-	;; manually.
-	(setq cur-scope ":fortags_program_scope:"))
+        ;; We are a program construct that didn't start with the
+        ;; 'program' keyword. Set cur-scope to :fortags_program_scope:
+        ;; manually.
+        (setq cur-scope ":fortags_program_scope:"))
     (setq scopes (split-string cur-scope ":"))
     (catch 'found
       (if (not force-global)
-	  (progn
-	    (setq i (1- (length scopes)))
-	    ;; If the current scope is :a:b:c:, but contains no match,
-	    ;; the search is expanded to the scopes :a:b:, :a:, and :
-	    ;; if necessary.
-	    (while (> i 0)
-	      (setq scope ":")
-	      (setq j (1- i))
-	      (while (> j 0)
-		;; This is where the original scope is widened,
-		;; e.g. :a:b:c: becomes :a:b:, which can become :a:
-		;; and so on.
-		(setq scope (concat ":" (nth j scopes) scope))
-		(setq j (1- j)))
-	      (setq match (shell-command-to-string
-			   (concat "LC_ALL=C fgrep -m 1 \" "
-				   WORD " " scope " \" " fortran-tags-path)))
-	      (if (not (string= "" match))
-		  (let ((words (split-string match)))
-		    (goto-new-position
-		     (nth 0 words) (nth 4 words) (nth 5 words))
-		    (throw 'found nil)))
-	      (setq i (1- i)))))
+          (progn
+            (setq i (1- (length scopes)))
+            ;; If the current scope is :a:b:c:, but contains no match,
+            ;; the search is expanded to the scopes :a:b:, :a:, and :
+            ;; if necessary.
+            (while (> i 0)
+              (setq scope ":")
+              (setq j (1- i))
+              (while (> j 0)
+                ;; This is where the original scope is widened,
+                ;; e.g. :a:b:c: becomes :a:b:, which can become :a:
+                ;; and so on.
+                (setq scope (concat ":" (nth j scopes) scope))
+                (setq j (1- j)))
+              (setq match (shell-command-to-string
+                           (concat "LC_ALL=C fgrep -m 1 \" "
+                                   WORD " " scope " \" " fortran-tags-path)))
+              (if (not (string= "" match))
+                  (let ((words (split-string match)))
+                    (goto-new-position
+                     (nth 0 words) (nth 4 words) (nth 5 words))
+                    (throw 'found nil)))
+              (setq i (1- i)))))
       ;; If no match was found, go through all the definitions with the
       ;; module scope.
       (setq match (split-string
-		   (shell-command-to-string
-		    (concat "LC_ALL=C fgrep \" 0 " WORD
-				       " :\" " fortran-tags-path)) "\n"))
+                   (shell-command-to-string
+                    (concat "LC_ALL=C fgrep \" 0 " WORD
+                            " :\" " fortran-tags-path)) "\n"))
       (if (not (string= "" (nth 0 match)))
-	  (progn
-	    (dolist (line (delete "" match))
-	      (let ((words (split-string line)))
-		(setq alt-positions
-		      (append alt-positions (list (list
-						   (nth 0 words)
-						   (nth 4 words)
-						   (nth 5 words)))))))
-	    (setq alt-positions-counter 0)
-	    (fortran-goto-next)
-	    (message (concat (number-to-string
-			      (length alt-positions)) " found"))
-	    (throw 'found nil)))
+          (progn
+            (dolist (line (delete "" match))
+              (let ((words (split-string line)))
+                (setq alt-positions
+                      (append alt-positions (list (list
+                                                   (nth 0 words)
+                                                   (nth 4 words)
+                                                   (nth 5 words)))))))
+            (setq alt-positions-counter 0)
+            (fortran-goto-next)
+            (message (concat (number-to-string
+                              (length alt-positions)) " found"))
+            (throw 'found nil)))
       (message "Definition not found"))))
 
 (defun fortran-pop-tag-mark ()
   "Return to the previous location."
   (interactive)
   (if fortran-buffers (progn
-			(switch-to-buffer (pop fortran-buffers))
-			(goto-char (pop fortran-positions)))))
+                        (switch-to-buffer (pop fortran-buffers))
+                        (goto-char (pop fortran-positions)))))
 
 (defun fortran-goto-next ()
   "If alt-positions is not empty, go to the next position,
@@ -284,29 +284,29 @@ for subroutines or functions."
     (if (string-match-p (regexp-quote "No such file or directory") match)
 	(error "A file that was previously present seems to be missing. Try regenerating the tags file."))
     (if (not (string= "" match))
-	(let ((matches (delete "" (split-string match "\n"))) (files "")
-	      (num-files ""))
-	  (setq alt-positions (list))
-	  (setq alt-positions-counter 0)
-	  (setq num-files (number-to-string (length matches)))
-	  (dolist (line matches)
-	    (let ((pieces (split-string line ":")))
-	      (setq alt-positions
-		    (append alt-positions
-			    (list (list (nth 0 pieces) (nth 1 pieces) "0"))))))
-	  (let ((i 0) tmp)
-	    (while (< i (length matches))
-	      (setq tmp (nth 0 (split-string (nth i matches) ":")))
-	      (setcar (nthcdr i matches) (concat (file-name-base tmp) "."
-						 (file-name-extension tmp)))
-	      (setq i (1+ i))))
-	  (setq matches (delete-dups matches))
-	  (dolist (x matches)
-	    (if (not (string= "" files))
-		(setq files (concat files ", " x))
-	      (setq files x))
-	    (message x))
-	  (message (concat num-files " found (" files ")")))
+        (let ((matches (delete "" (split-string match "\n"))) (files "")
+              (num-files ""))
+          (setq alt-positions (list))
+          (setq alt-positions-counter 0)
+          (setq num-files (number-to-string (length matches)))
+          (dolist (line matches)
+            (let ((pieces (split-string line ":")))
+              (setq alt-positions
+                    (append alt-positions
+                            (list (list (nth 0 pieces) (nth 1 pieces) "0"))))))
+          (let ((i 0) tmp)
+            (while (< i (length matches))
+              (setq tmp (nth 0 (split-string (nth i matches) ":")))
+              (setcar (nthcdr i matches) (concat (file-name-base tmp) "."
+                                                 (file-name-extension tmp)))
+              (setq i (1+ i))))
+          (setq matches (delete-dups matches))
+          (dolist (x matches)
+            (if (not (string= "" files))
+                (setq files (concat files ", " x))
+              (setq files x))
+            (message x))
+          (message (concat num-files " found (" files ")")))
       (message "Not found"))))
 
 (defun fortran-find-proc-calls-sub()
@@ -331,20 +331,20 @@ procedures)."
   (save-excursion
     (goto-line 0)
     (let ((endproc-regex "^ *end +\\(subroutine\\|function\\)")
-	  (begin-regex "\\(^\\| *\\)\\(subroutine\\|function\\) +\\")
-	  (end-regex " *\\(\(\\|&\\)"))
+          (begin-regex "\\(^\\| *\\)\\(subroutine\\|function\\) +\\")
+          (end-regex " *\\(\(\\|&\\)"))
       (setq matches (list))
       (while (re-search-forward endproc-regex nil t)
-	(setq matches
-	      (append matches
-		      (list
-		       (replace-regexp-in-string
-			endproc-regex "" (thing-at-point 'line t))))))
+        (setq matches
+              (append matches
+                      (list
+                       (replace-regexp-in-string
+                        endproc-regex "" (thing-at-point 'line t))))))
       ;; Replace newlines with '|' symbols for the regexp
       (setq procedures
-	    (replace-regexp-in-string "\n" "\\\\|" (format "%s" matches)))
+            (replace-regexp-in-string "\n" "\\\\|" (format "%s" matches)))
       (setq procedures
-	    (replace-regexp-in-string "\\\\|)" "\\\\)" procedures))
+            (replace-regexp-in-string "\\\\|)" "\\\\)" procedures))
       ;; Remove all spaces
       (setq procedures (replace-regexp-in-string " " "" procedures))
       ;; Add beginning and end parts of the regexp
@@ -356,15 +356,15 @@ procedures)."
   "Minor mode providing functions for Fortran source code indexing."
   :lighter " FT"
   :keymap (let ((map (make-sparse-keymap)))
-	    (define-key map (kbd "M-.") 'fortran-find-tag)
-	    (define-key map (kbd "M-*") 'fortran-pop-tag-mark)
-	    (define-key map (kbd "M-n") 'fortran-goto-next)
-	    (define-key map (kbd "M-s g") 'fortran-find-proc-calls)
-	    (define-key map (kbd "M-s s") 'fortran-find-proc-calls-sub)
-	    (define-key map (kbd "M-s f") 'fortran-find-proc-calls-func)
-	    (define-key map (kbd "M-s t") 'fortran-find-proc-calls-type)
-	    (define-key map (kbd "M-s d") 'fortran-procedures-in-buffer)
-	    map))
+            (define-key map (kbd "M-.") 'fortran-find-tag)
+            (define-key map (kbd "M-*") 'fortran-pop-tag-mark)
+            (define-key map (kbd "M-n") 'fortran-goto-next)
+            (define-key map (kbd "M-s g") 'fortran-find-proc-calls)
+            (define-key map (kbd "M-s s") 'fortran-find-proc-calls-sub)
+            (define-key map (kbd "M-s f") 'fortran-find-proc-calls-func)
+            (define-key map (kbd "M-s t") 'fortran-find-proc-calls-type)
+            (define-key map (kbd "M-s d") 'fortran-procedures-in-buffer)
+            map))
 
 (add-hook 'f90-mode-hook 'fortran-tags-mode)
 
