@@ -200,7 +200,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         if scope_count == 1:
                             scope = ':fortags_program_scope:'
                             scope_count = 2
-                        r = '([ ,:&]|^)' + name + '([ ,(\[=!\*\t]|$)'
+                        r = '([ ,:&\t]|^)' + name + '([ ,(\[=!\*\t]|$)'
                         m = search(r, line_raw)
                         position = int((m.start()+m.end())/2)
                         TAGS.append('{} {} {} {} {} {}\n'.\
