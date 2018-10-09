@@ -74,7 +74,11 @@ the current buffer and position."
   (unless (boundp 'fortran-positions) (setq fortran-positions (list)))
   (push (current-buffer) fortran-buffers)
   (push (point) fortran-positions)
-  (find-file file)
+  ;; Do not call find-file if the current buffer is an indirect buffer
+  ;; and the definition is in the same buffer.
+  (unless (and (buffer-base-buffer)
+               (string= file (buffer-file-name (buffer-base-buffer))))
+    (find-file file))
   (goto-line (string-to-number line))
   (forward-char (string-to-number char)))
 
