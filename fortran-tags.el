@@ -77,7 +77,9 @@ the current buffer and position."
   ;; Do not call find-file if the current buffer is an indirect buffer
   ;; and the definition is in the same buffer.
   (unless (and (buffer-base-buffer)
-               (string= file (buffer-file-name (buffer-base-buffer))))
+               (string= (file-truename file)
+                        (file-truename
+                         (buffer-file-name (buffer-base-buffer)))))
     (find-file file))
   (goto-line (string-to-number line))
   (forward-char (string-to-number char)))
