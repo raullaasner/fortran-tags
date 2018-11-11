@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2015-2017 Raul Laasner
+# Copyright (C) 2015-2018 Raul Laasner
 # This file is distributed under the terms of the GNU General Public
 # License, see 'LICENSE' in the root directory of the present
 # distribution or http://gnu.org/copyleft/gpl.txt .

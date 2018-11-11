@@ -1,4 +1,10 @@
-;; Copyright (C) 2015-2017 Raul Laasner
+;;; fortran-tags.el --- source code indexer of modern Fortran
+
+;; Author: Raul Laasner
+;; Keywords: languages, tags, fortran
+;; Homepage: https://github.com/raullaasner/fortran-tags
+
+;; Copyright (C) 2015-2018 Raul Laasner
 ;; This file is distributed under the terms of the GNU General Public
 ;; License, see 'LICENSE' in the root directory of the present
 ;; distribution or http://gnu.org/copyleft/gpl.txt .
@@ -36,6 +42,8 @@
 ;;   cur-scope:
 ;;     The scope at the position of the cursor as determined by
 ;;     fortran-find-scope.
+
+;;; Code:
 
 (setq VERSION "1.4.0")
 
@@ -375,3 +383,5 @@ procedures)."
 (add-hook 'f90-mode-hook 'fortran-tags-mode)
 
 (provide 'fortran-tags)
+
+;;; fortran-tags.el ends here
