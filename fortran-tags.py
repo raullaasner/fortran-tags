@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2015-2018 Raul Laasner
 # This file is distributed under the terms of the GNU General Public
@@ -52,77 +52,92 @@ from os import path, stat
 from re import match, search
 import argparse
 
-VERSION='1.4.0'
+VERSION = '1.4.0'
+
 
 def clean_string(l):
     """Removes strings and comments from the line.
+
     """
     # Since there are two delimiters for the character type which can
     # be nested, all combinations need to be considered.
-    global lock # lock[0] (lock[1]) is True if the previous line
-                # didn't have a matching single (double) quote
+
+    # lock[0] (lock[1]) is True if the previous line didn't have a
+    # matching single (double) quote
+    global lock
     char_symbol = ["'", '"']
     str_length = len(l)
     # If x (x being ', ", or !) is not in l, we define its position to
     # be at str_length.
-    pos_c  = l.find('!') if '!' in l else str_length
-    pos_s = [0,0]
-    for i in -1,0:
-        pos_s[i] = l.find(char_symbol[i]) if char_symbol[i] in l else str_length
-    for i in -1,0:
+    pos_c = l.find('!') if '!' in l else str_length
+    pos_s = [0, 0]
+    for i in -1, 0:
+        pos_s[i] = (l.find(char_symbol[i]) if char_symbol[i] in l
+                    else str_length)
+    for i in -1, 0:
         if lock[i]:
             if pos_s[i] < str_length:
                 lock[i] = False
                 return clean_string(l[pos_s[i]+1:])
             else:
                 return ''
-    if pos_c == str_length and pos_s[0] == str_length and \
-       pos_s[1] == str_length:
+    if pos_c == str_length and pos_s[0] == str_length and (pos_s[1] ==
+                                                           str_length):
         return l
     if pos_c < pos_s[0] and pos_c < pos_s[1]:
         return l[0:pos_c]
-    for i in -1,0:
+    for i in -1, 0:
         if pos_s[i] < pos_s[i+1]:
             l0 = l[pos_s[i]+1:]
             if char_symbol[i] in l0:
-                return clean_string(l[0:pos_s[i]]+
+                return clean_string(l[0:pos_s[i]] +
                                     l[pos_s[i]+l0.find(char_symbol[i])+2:])
             else:
                 lock[i] = True
                 return l[:pos_s[i]]
 
+
 def process_input(input_text, find_definitions, TAGS='', filepath=''):
-    """Finds either all definitions and their scopes
-    (find_definitions=True) or finds only the current scope
-    (find_definitions=False).
+    """Find definitions and their scopes.
+
+    If not find_definitions, then only find the scopes.
+
     """
     global lock
-    global scope         # Current scope
-    # Whether the current line is a continuation of a
-    cont_var = False     # 1) variable definition,
-    cont_rename = False  # 2) renaming,
-    cont_func = False    # 3) function definition,
-    cont_line = False    # 4) any other line.
-    in_type = False      # Whether we are currently inside a type
-                         # definition. Variable definitions inside a
-                         # type definition are ignored.
-    in_interface = False # Same but with interfaces.
-    scope_unused = True  # True if there haven't been any definitions
-                         # with the present scope so far.
-    in_mod = False       # Wether we are currently inside a
-                         # module. This helps to set the scope level of
-                         # module wide variables to 0 as explained
-                         # above.
-    lock = [False, False] # Initialize clean_string
+    # Current scope
+    global scope
+    # Whether the current line is a continuation of a 1) variable definition,
+    cont_var = False
+    # 2) renaming,
+    cont_rename = False
+    # 3) function definition,
+    cont_func = False
+    # 4) any other line.
+    cont_line = False
+    # Whether we are currently inside a type definition. Variable
+    # definitions inside a type definition are ignored.
+    in_type = False
+    # Same but with interfaces.
+    in_interface = False
+    # True if there haven't been any definitions with the present
+    # scope so far.
+    scope_unused = True
+    # Wether we are currently inside a module. This helps to set the
+    # scope level of module wide variables to 0 as explained above.
+    in_mod = False
+    # Initialize clean_string
+    lock = [False, False]
     scope = ':'
     scope_count = 1
     line_nr = 0
     for line_raw in input_text:
         line_nr += 1
-        if line_raw.lstrip().startswith('#'): continue
+        if line_raw.lstrip().startswith('#'):
+            continue
         line_raw = line_raw.lower()
         line = clean_string(line_raw).strip()
-        if not line: continue
+        if not line:
+            continue
         if cont_line:
             cont_line = line.endswith('&')
             continue
@@ -130,15 +145,16 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
             # PART 1 - variables, renamings, operator overloading
             exceptions = 'real[*]8|complex[*]16|'
             m = match('(('+exceptions+'real|integer|logical|character|'
-                      'complex|class|enumerator|external)[ ,([:]|type *\()', \
+                      r'complex|class|enumerator|external)[ ,([:]|type *\()',
                       line)
-            if (m and not ' function ' in line) or cont_var:
+            if (m and ' function ' not in line) or cont_var:
                 # In the following, 'names' contains all the variables
                 # found on the current line.
                 if cont_var:
                     for symbol in ('&', ','):
                         # Cannot use startswith(('&', ',')) here!
-                        if line.startswith(symbol): line = line[1:].lstrip()
+                        if line.startswith(symbol):
+                            line = line[1:].lstrip()
                     if line.startswith(('/', '*', '-', '+')):
                         cont_var = False
                         continue
@@ -157,14 +173,15 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         line = line[m.end():].lstrip()
                     if line.startswith('('):
                         shift = 1
-                        while shift < len(line) and \
-                              line[:shift].count('(') \
-                              != line[:shift].count(')'):
+                        while shift < len(line) and (line[:shift].count('(') !=
+                                                     line[:shift].count(')')):
                             shift += 1
-                        if shift == len(line): continue
+                        if shift == len(line):
+                            continue
                         line = line[shift:].lstrip()
-                        if not line: continue
-                    if line.startswith(('=', '/', '.', '*', \
+                        if not line:
+                            continue
+                    if line.startswith(('=', '/', '.', '*',
                                         '-', '+', ')', ']')):
                         continue
                     names = line.split(',')
@@ -174,12 +191,13 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     # at commas, special care needs to be taken
                     # against multi-dimensional arrays and coarrays.
                     name = names[i]
-                    while name.count('(') > name.count(')') or \
-                          name.count('[') > name.count(']'):
+                    while name.count('(') > name.count(')') or (
+                            name.count('[') > name.count(']')):
                         i += 1
-                        if i == len(names): break
-                        name += ',' + names[i] # The name is pieced
-                                               # back together
+                        if i == len(names):
+                            break
+                        # The name is pieced back together
+                        name += f',{names[i]}'
                     for symbol in ('(', '=', '[', '*'):
                         if symbol in name:
                             if '&' in name and name.rstrip()[-1] == '&':
@@ -200,21 +218,20 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         if scope_count == 1:
                             scope = ':fortags_program_scope:'
                             scope_count = 2
-                        r = '([ ,:&\t]|^)' + name + '([ ,(\[=!\*\t]|$)'
+                        r = '([ ,:&\t]|^)' + name + r'([ ,(\[=!\*\t]|$)'
                         m = search(r, line_raw)
                         position = int((m.start()+m.end())/2)
-                        TAGS.append('{} {} {} {} {} {}\n'.\
-                                    format(filepath, scope_count, name, \
-                                           scope, line_nr, position))
+                        TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                                    f'{line_nr} {position}\n')
                         scope_unused = False
                     i += 1
                     cont_var = True if line.rstrip()[-1] == '&' else False
                 continue
-            if ('=>' in line and \
-                (('use' in line and line.startswith(('use ', 'use,'))) or \
-                 ('associate' in line and \
-                  line.startswith(('associate ', 'associate('))))) or \
-                cont_rename:
+            if ('=>' in line and (
+                    ('use' in line and line.startswith(('use ', 'use,'))) or
+                    ('associate' in line and
+                     line.startswith(('associate ', 'associate('))))) or (
+                         cont_rename):
                 # Same comment as above with variable declarations
                 if scope_count == 1:
                     scope = ':fortags_program_scope:'
@@ -227,13 +244,13 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 for i in range(len(names)-1):
                     name = names[i].split()[-1]
                     for symbol in ('(', ',', '&'):
-                        if symbol in name: name = name[name.find(symbol)+1:]
+                        if symbol in name:
+                            name = name[name.find(symbol)+1:]
                     name = name.strip()
                     m = search('([ ,(&]|^)'+name+'[ =]', line_raw)
                     position = str(int((m.start()+m.end())/2))
-                    TAGS.append('{} {} {} {} {} {}\n'.\
-                                format(filepath, scope_count, name, \
-                                       scope, line_nr, position))
+                    TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                                f'{line_nr} {position}\n')
                     scope_unused = False
                 if line.rstrip()[-1] == '&':
                     cont_rename = True
@@ -246,47 +263,53 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     # Same comment as above with variable declarations.
                     scope = ':fortags_program_scope:'
                     scope_count = 2
-                name = line.split(None,2)[1]
+                name = line.split(None, 2)[1]
                 m = search(' '+name+'([ !]|$)', line_raw)
                 position = int((m.start()+m.end())/2)
-                TAGS.append('{} {} {} {} {} {}\n'.\
-                            format(filepath, 0, name, \
-                                   scope, line_nr, position))
+                TAGS.append(f'{filepath} 0 {name} {scope} {line_nr} {position}'
+                            '\n')
                 scope_unused = False
                 continue
             # Treat procedure renamings inside a type definition
             # separately.
             if in_type and '=>' in line:
                 # Exclude pointer initializations
-                if search(',[ ]*pointer[ ]*( |[ ]*::)', line): continue
+                if search(',[ ]*pointer[ ]*( |[ ]*::)', line):
+                    continue
                 # Exclude operator(...) type overloading.
-                if ')' in line: continue
-                name = line.split('=>',1)[0].rstrip()
-                if '::' in name: name = name.split('::',1)[1]
-                if ' ' in name: name = name.rsplit(' ',1)[1]
+                if ')' in line:
+                    continue
+                name = line.split('=>', 1)[0].rstrip()
+                if '::' in name:
+                    name = name.split('::', 1)[1]
+                if ' ' in name:
+                    name = name.rsplit(' ', 1)[1]
                 m = search('( |[ ]*::)'+name+'[ ]*=>', line_raw)
                 # If the search failed, there was something weird in the
                 # source code (maybe a preprocessor macro that
                 # Fortran-tags couldn't handle).
-                if m is None: continue
+                if m is None:
+                    continue
                 position = int((m.start()+m.end())/2)
-                TAGS.append('{} {} {} {} {} {}\n'.\
-                            format(filepath, 0, name, \
-                                   scope, line_nr, position))
+                TAGS.append(f'{filepath} 0 {name} {scope} {line_nr} {position}'
+                            '\n')
                 scope_unused = False
                 continue
         # PART 2 - scope delocalization
-        if line.startswith('end interface') and \
-           line.rstrip() == 'end interface' or line.startswith('endinterface') \
-           and line.rstrip() == 'endinterface':
+        if (
+                line.startswith('end interface') and
+                line.rstrip() == 'end interface' or
+                line.startswith('endinterface') and
+                line.rstrip() == 'endinterface'):
             in_interface = False
             continue
-        if in_interface: continue
+        if in_interface:
+            continue
         if line.startswith('end '):
-            if match('end +(subroutine|function|type|associate|block'
-                     '|module|program)', line):
-                # Decrease scope level by one or signal that we are longer
-                # inside a type definition.
+            if match('end +(subroutine|function|type|associate|block|module|'
+                     'program)', line):
+                # Decrease scope level by one or signal that we are
+                # longer inside a type definition.
                 if in_type:
                     in_type = False
                 elif in_interface:
@@ -300,24 +323,26 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         # is empty of declarations. This ensures not
                         # to confuse the Elisp function
                         # fortran-find-scope.
-                        TAGS.append(filepath + ' ' + scope + ' \n')
+                        TAGS.append(f'{filepath} {scope} \n')
                         scope_unused = False
                     scope = scope[0:scope[0:len(scope)-1].rfind(':')+1]
                     s = scope.count(':')
                     scope_count = 0 if s == 2 and in_mod else s
-                    if scope_count == 1: in_mod = False
+                    if scope_count == 1:
+                        in_mod = False
             continue
-        if line.startswith('end') and \
-           (match('(endsubroutine|endfunction|endassociate|endblock'
-                  '|endmodule|endprogram) ?', line) or line == 'end'):
+        if line.startswith('end') and (match(
+                '(endsubroutine|endfunction|endassociate|endblock|endmodule|'
+                'endprogram) ?', line) or line == 'end'):
             if find_definitions and scope_unused:
                 # Same as above
-                TAGS.append(filepath + ' ' + scope + ' \n')
+                TAGS.append(f'{filepath} {scope} \n')
                 scope_unused = False
             scope = scope[0:scope[0:len(scope)-1].rfind(':')+1]
             s = scope.count(':')
             scope_count = 0 if s == 2 and in_mod else s
-            if scope_count == 1: in_mod = False
+            if scope_count == 1:
+                in_mod = False
             continue
         # PART 3 - procedures, modules, type definitions; scope localization
         if 'subroutine ' in line:
@@ -328,16 +353,16 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 else:
                     name = line.partition(' subroutine ')[2]
                 for symbol in ('(', '&'):
-                    if symbol in name: name = name[:name.find(symbol)]
+                    if symbol in name:
+                        name = name[:name.find(symbol)]
                 name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
                     position = int((m.start()+m.end())/2)
-                    TAGS.append('{} {} {} {} {} {}\n'.\
-                                format(filepath, scope_count, name, \
-                                       scope, line_nr, position))
+                    TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                                f'{line_nr} {position}\n')
                     scope_unused = True
-                scope += name + ':'
+                scope += f'{name}:'
                 s = scope.count(':')
                 scope_count = 0 if s == 2 and in_mod else s
                 continue
@@ -349,82 +374,85 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 else:
                     name = line.partition(' function ')[2]
                 for symbol in ('(', '&'):
-                    if symbol in name: name = name[:name.find(symbol)]
+                    if symbol in name:
+                        name = name[:name.find(symbol)]
                 name = name.strip()
                 if find_definitions:
                     m = search(' '+name+'([ (&!]|$)', line_raw)
                     position = int((m.start()+m.end())/2)
-                    TAGS.append('{} {} {} {} {} {}\n'.\
-                                format(filepath, scope_count, name, \
-                                       scope, line_nr, position))
+                    TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                                f'{line_nr} {position}\n')
                     scope_unused = True
-                scope += name + ':'
+                scope += f'{name}:'
                 s = scope.count(':')
                 scope_count = 0 if s == 2 and in_mod else s
-                if find_definitions: cont_func = True
+                if find_definitions:
+                    cont_func = True
         if cont_func:
-            if line.rstrip()[-1] != '&': cont_func = False
+            if line.rstrip()[-1] != '&':
+                cont_func = False
             if 'result' in line:
                 m = search('[ )]result[( ]', line)
                 if m:
                     name = line.partition(m.group())[2]
-                    if ')' in name: name = name[:name.find(')')]
-                    if '(' in name: name = name[name.find('(')+1:]
-                    m = search('\( *'+name+' *\)', line_raw)
+                    if ')' in name:
+                        name = name[:name.find(')')]
+                    if '(' in name:
+                        name = name[name.find('(')+1:]
+                    m = search(r'\( *'+name+r' *\)', line_raw)
                     position = int((m.start()+m.end())/2)
-                    TAGS.append('{} {} {} {} {} {}\n'.\
-                                format(filepath, scope_count, name, \
-                                       scope, line_nr, position))
+                    TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                                f'{line_nr} {position}\n')
                     scope_unused = False
                 continue
-        if 'module ' in line and ' procedure ' in line and \
-           line.split(None,2)[0:2] == ['module', 'procedure']:
+        if 'module ' in line and ' procedure ' in line and (
+                line.split(None, 2)[0:2] == ['module', 'procedure']):
             continue
         if 'module ' in line and line.partition(' ')[0] == 'module':
-            name = line.split(None,2)[1]
+            name = line.split(None, 2)[1]
             if find_definitions:
                 m = search(' '+name+'([ (&!]|$)', line_raw)
                 position = int((m.start()+m.end())/2)
-                TAGS.append('{} {} {} {} {} {}\n'.\
-                            format(filepath, 1, name, scope, line_nr, position))
+                TAGS.append(f'{filepath} 1 {name} {scope} {line_nr} {position}'
+                            f'\n')
                 in_mod = True
                 scope_unused = True
-            scope += name + ':'
+            scope += f'{name}:'
             s = scope.count(':')
             scope_count = 0 if s == 2 and in_mod else s
             continue
         if 'program ' in line and line.partition(' ')[0] == 'program':
-            name = line.split(None,2)[1]
+            name = line.split(None, 2)[1]
             if find_definitions:
                 m = search(' '+name+'([ (&!]|$)', line_raw)
                 position = int((m.start()+m.end())/2)
-                TAGS.append('{} {} {} {} {} {}\n'.\
-                            format(filepath, 1, name, scope, line_nr, position))
+                TAGS.append(f'{filepath} 1 {name} {scope} {line_nr} {position}'
+                            '\n')
                 scope_unused = True
-            scope += name + ':'
+            scope += f'{name}:'
             s = scope.count(':')
             scope_count = 0 if s == 2 and in_mod else s
             continue
-        if line.startswith(('type,', 'type:')) or \
-           (line.startswith('type ') and \
-            not line[5:].lstrip().startswith('(')):
+        if line.startswith(('type,', 'type:')) or (
+                line.startswith('type ') and not line[5:].lstrip().startswith(
+                    '(')):
             # 'type' is special because it can both declare a variable
             # and define a new type.
             line0 = line[5:].lstrip()
             # Ignore 'select type' construct
             if line0.startswith('is'):
                 line0 = line0[2:].lstrip()
-                if line0.startswith('('): continue
+                if line0.startswith('('):
+                    continue
             if find_definitions:
                 if ':' in line:
                     name = line[line.find(':')+2:].strip()
                 else:
-                    name = line.split(None,2)[1]
+                    name = line.split(None, 2)[1]
                 m = search('[ :]'+name+'([ !]|$)', line_raw)
                 position = int((m.start()+m.end())/2)
-                TAGS.append('{} {} {} {} {} {}\n'.\
-                            format(filepath, scope_count, name, \
-                                   scope, line_nr, position))
+                TAGS.append(f'{filepath} {scope_count} {name} {scope} '
+                            f'{line_nr} {position}\n')
                 scope_unused = False
             in_type = True
             continue
@@ -443,6 +471,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
         # continuation of a variable definition. Either way, we shall
         # not count it as line continuation.
         cont_line = line.endswith('&') and not line == '&'
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--find-scope', action='store_true',
@@ -470,69 +499,68 @@ if args.generate:
     if path.exists(tags_path):
         tags_old = open(tags_path).readlines()
     input_files = [path.abspath(f) for f in args.generate]
-    TAGS = [] # Work array for tags
-    untouched = [] # Unmodified source files
+    TAGS = []  # Work array for tags
+    untouched = []  # Unmodified source files
     # STEP 1 - Scan the old tags file for changes
     if path.exists(tags_path) and str(tags_old[0]) != VERSION+'\n':
-        stdout.write('Deleting {}, which was created with version {}'.\
-                     format(tags_path, tags_old[0]))
+        stdout.write(f'Deleting {tags_path}, which was created with version '
+                     f'{tags_old[0]}')
     elif path.exists(tags_path):
-        stdout.write('Scanning {} for changes ...'.format(tags_path))
+        stdout.write(f'Scanning {tags_path} for changes ...')
         stdout.flush()
         line_nr = 2
         while line_nr < len(tags_old):
             words = tags_old[line_nr].split()
             filename = words[0]
             shift = int(words[-1])
-            if filename in input_files and \
-               path.getctime(filename) < path.getctime(tags_path):
+            if filename in input_files and (
+                    path.getctime(filename) < path.getctime(tags_path)):
                 TAGS.extend(tags_old[line_nr:line_nr+shift])
                 untouched.append(filename)
             line_nr += shift
         # Include unmodified files devoid of any declarations
         old_filenames = tags_old[1].split()
         for filename in input_files:
-            if filename in old_filenames and not filename in untouched and \
-               path.getctime(filename) < path.getctime(tags_path):
+            if filename in old_filenames and filename not in untouched and (
+                    path.getctime(filename) < path.getctime(tags_path)):
                 untouched.append(filename)
-        stdout.write('\rScanning {} for changes ... done\n'.format(tags_path))
+        stdout.write(f'\rScanning {tags_path} for changes ... done\n')
         stdout.flush()
     # STEP 2 - Process modified source files
-    total_size = sum(stat(f).st_size for f in args.generate) - \
-                 sum(stat(f).st_size for f in untouched)
+    total_size = (sum(stat(f).st_size for f in args.generate) -
+                  sum(stat(f).st_size for f in untouched))
     current_size = 0
     for f in args.generate:
         if not path.abspath(f) in untouched:
-            stdout.write('\rProcessing input files ... {}%'.\
-                         format(int(float(current_size)/total_size*100)))
+            stdout.write('\rProcessing input files ... '
+                         f'{int(float(current_size)/total_size*100)}%')
             stdout.flush()
             current_size += stat(f).st_size
             try:
                 input_text = open(f, 'r').readlines()
-            except UnicodeDecodeError as e:
+            except UnicodeDecodeError:
                 from codecs import open as copen
-                input_text = copen(f, 'r', encoding='utf-8', \
-                                         errors='ignore').readlines()
-                print("\rutf-8 codec can't fully decode {}. ".format(f) +
+                input_text = copen(f, 'r', encoding='utf-8',
+                                   errors='ignore').readlines()
+                print(f"\rutf-8 codec can't fully decode {f}. "
                       'Skipping some characters.')
-                stdout.write('\rProcessing input files ... {}%'.\
-                             format(int(float(current_size)/total_size*100)))
+                stdout.write('\rProcessing input files ... '
+                             f'{int(float(current_size)/total_size*100)}%')
             try:
                 process_input(input_text, True, TAGS, path.abspath(f))
             except AttributeError as e:
                 from inspect import trace
-                from sys import exit
                 line_raw = trace()[-1][0].f_locals['line_raw']
                 line_nr = trace()[-1][0].f_locals['line_nr']
-                print('\nError on line {}:{}:'.format(path.abspath(f), line_nr))
+                print(f'\nError on line {path.abspath(f)}:{line_nr}:')
                 print(line_raw)
-                print('AttributeError: {}'.format(e))
+                print(f'AttributeError: {e}')
                 print('If you consider this a bug, please report at')
                 print('https://github.com/raullaasner/fortran-tags/issues')
-                exit()
+                raise
     n_processed = len(args.generate) - len(untouched)
-    stdout.write('\rProcessing input files ... done ({} file{})\n'.\
-                 format(n_processed, 's' if n_processed != 1 else ''))
+    stdout.write(f'\rProcessing input files ... done ({n_processed} '
+                 f'file{"s" if n_processed != 1 else ""})\n')
     stdout.flush()
     # STEP 3 - Write data to file
     TAGS.sort()
@@ -544,11 +572,12 @@ if args.generate:
         filename = TAGS[line_nr].partition(' ')[0]
         while TAGS[line_nr].startswith(filename):
             line_nr += 1
-            if line_nr == len(TAGS): break
-        if not filename in untouched:
-            TAGS[tmp] = TAGS[tmp][0:-1]+' '+str(line_nr-tmp)+'\n'
+            if line_nr == len(TAGS):
+                break
+        if filename not in untouched:
+            TAGS[tmp] = f'{TAGS[tmp][0:-1]} {line_nr-tmp}\n'
     with open(tags_path, 'w') as tags_file:
-        tags_file.write(VERSION+'\n')
+        tags_file.write(f'{VERSION}\n')
         tags_file.writelines(path.abspath(f)+' ' for f in args.generate)
         tags_file.write('\n')
         tags_file.writelines(TAGS)
