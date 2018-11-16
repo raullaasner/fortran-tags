@@ -185,19 +185,19 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                                         '-', '+', ')', ']')):
                         continue
                     names = line.split(',')
-                i = 0
-                while i < len(names):
+                i_name = 0
+                while i_name < len(names):
                     # Since names are separated by splitting the line
                     # at commas, special care needs to be taken
                     # against multi-dimensional arrays and coarrays.
-                    name = names[i]
+                    name = names[i_name]
                     while name.count('(') > name.count(')') or (
                             name.count('[') > name.count(']')):
-                        i += 1
-                        if i == len(names):
+                        i_name += 1
+                        if i_name == len(names):
                             break
                         # The name is pieced back together
-                        name += f',{names[i]}'
+                        name += f',{names[i_name]}'
                     for symbol in ('(', '=', '[', '*'):
                         if symbol in name:
                             if '&' in name and name.rstrip()[-1] == '&':
@@ -224,8 +224,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         TAGS.append(f'{filepath} {scope_count} {name} {scope} '
                                     f'{line_nr} {position}\n')
                         scope_unused = False
-                    i += 1
-                    cont_var = True if line.rstrip()[-1] == '&' else False
+                    i_name += 1
+                    cont_var = line.rstrip()[-1] == '&'
                 continue
             if ('=>' in line and (
                     ('use' in line and line.startswith(('use ', 'use,'))) or
@@ -252,10 +252,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                     TAGS.append(f'{filepath} {scope_count} {name} {scope} '
                                 f'{line_nr} {position}\n')
                     scope_unused = False
-                if line.rstrip()[-1] == '&':
-                    cont_rename = True
-                else:
-                    cont_rename = False
+                cont_rename = line.rstrip()[-1] == '&'
                 continue
             if match('interface +(?!(operator|assignment|$))', line):
                 # Operator overloading also counts as a new definition.
@@ -386,11 +383,9 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                 scope += f'{name}:'
                 s = scope.count(':')
                 scope_count = 0 if s == 2 and in_mod else s
-                if find_definitions:
-                    cont_func = True
+                cont_func = find_definitions
         if cont_func:
-            if line.rstrip()[-1] != '&':
-                cont_func = False
+            cont_func = line.rstrip()[-1] == '&'
             if 'result' in line:
                 m = search('[ )]result[( ]', line)
                 if m:
