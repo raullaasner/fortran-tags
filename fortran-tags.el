@@ -64,7 +64,7 @@
 
 ;;; Code:
 
-(setq VERSION "1.4.0")
+(setq VERSION "1.5.0")
 
 (defun set-remote-location-parameters ()
   "Set global parameters for remote connections.

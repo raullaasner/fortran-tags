@@ -52,7 +52,7 @@ import os
 import re
 import argparse
 
-VERSION = '1.4.0'
+VERSION = '1.5.0'
 
 
 def clean_string(l):
