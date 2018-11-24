@@ -9,11 +9,13 @@
 ;; License, see 'LICENSE' in the root directory of the present
 ;; distribution or http://gnu.org/copyleft/gpl.txt .
 
-;; Quick explanation:
-;;  fortran-read-tags    works like visit-tags-table
-;;  fortran-find-tag     works like find-tag
-;;  fortran-pop-tag-mark works like pop-tag-mark
-;;  fortran-goto-next    works like find-tag for multiple matches
+;;; Commentary:
+
+;; In short:
+;;  fortran-read-tags       works like visit-tags-table
+;;  fortran-find-tag        works like find-tag
+;;  fortran-pop-tag-mark    works like pop-tag-mark
+;;  fortran-goto-next       works like find-tag for multiple matches
 ;;  fortran-find-proc-calls finds all the places where the procedure
 ;;                          has been used
 ;; See README for detailed information.
@@ -28,10 +30,10 @@
 ;;   alt-positions:
 ;;     Holds the positions of alternative definitions if any were
 ;;     found by fortran-find-tag or contains the matches found by
-;;     fortran-find-proc-calls. This is a list where each item is a
+;;     fortran-find-proc-calls.  This is a list where each item is a
 ;;     3-item list (filepath, line_nr, position).
 ;;   alt-positions-counter:
-;;     Remembers how many times alt-positions has been accessed. Each
+;;     Remembers how many times alt-positions has been accessed.  Each
 ;;     call to fortran-goto-next moves on to the next element of
 ;;     alt-positions.
 ;;   fortran-tags-path:
@@ -42,26 +44,84 @@
 ;;   cur-scope:
 ;;     The scope at the position of the cursor as determined by
 ;;     fortran-find-scope.
+;;   fortran-tags-remote-protocol:
+;;     Name of the networking protocol used by TRAMP
+;;     (e.g. "ssh").  This is non-nil if the tags file is fetched over
+;;     network.
+;;   fortran-tags-remote-location:
+;;     Address of the remote server (<user>@<server>)
+;;   fortran-tags-shell-prefix:
+;;     A string that is prepended to all shell commands.  This is
+;;     typically empty but is non-empty for remote connections.
+;;   fortran-tags-shell-suffix:
+;;     A string that is appended to all shell commands.  This is
+;;     typically empty but is non-empty for remote connections.  For
+;;     the latter, it is simply "'", which completes the ssh command.
+;;   fortran-tags-file-prefix:
+;;     Used whenever an operation is performed on a file,
+;;     e.g. find-file.  This is typically empty but is non-empty,
+;;     e.g. "/ssh:<user>@<server>:", for a remote connection.
 
 ;;; Code:
 
 (setq VERSION "1.4.0")
 
+(defun set-remote-location-parameters ()
+  "Set global parameters for remote connections.
+
+For local connections, most of these variables equal an empty
+string."
+  (unless (boundp 'fortran-tags-remote-protocol)
+    (if (string-match "/?\\(.*\\):\\(.*\\):\\(.*\\)" fortran-tags-path)
+        (progn
+          (setq fortran-tags-remote-protocol (match-string 1 fortran-tags-path))
+          (setq fortran-tags-remote-location (match-string 2 fortran-tags-path))
+          (setq fortran-tags-path (match-string 3 fortran-tags-path)))
+      (setq fortran-tags-remote-protocol nil)))
+  (if fortran-tags-remote-protocol
+      (progn
+        (setq fortran-tags-shell-prefix
+              (concat fortran-tags-remote-protocol " "
+                      fortran-tags-remote-location " '"))
+        (setq fortran-tags-shell-suffix "'")
+        (setq fortran-tags-file-prefix
+              (concat "/" fortran-tags-remote-protocol ":"
+                      fortran-tags-remote-location ":"))))
+    (progn
+      (setq fortran-tags-shell-prefix "")
+      (setq fortran-tags-shell-suffix "")
+      (setq fortran-tags-file-prefix "")))
+
+(defun fortran-tags-shell-command (cmd)
+  "Run CMD as a shell command.
+
+For local connections (when not using TRAMP) this is the same as
+shell-command-to-string."
+  (shell-command-to-string
+   (concat fortran-tags-shell-prefix cmd fortran-tags-shell-suffix)))
+
 (defun fortran-read-tags ()
-  "Interactively return the path of the fortran tags file."
+  "Interactively return the path of the Fortran tags file.
+
+Also delete some remote parameters so that they can be cleanly
+set again."
   (interactive)
+  (makunbound 'fortran-tags-remote-protocol)
+  (makunbound 'fortran-tags-shell-prefix)
   (read-file-name "Read tags file (default FORTAGS): " default-directory
                   (expand-file-name "FORTAGS" default-directory) t))
 
 (defun check-fortran-tags-version ()
-  "Return true if the first line of the tags file matches the
+  "Read and check Fortran-tags version from the tags file.
+
+Return true if the first line of the tags file matches the
 current version of Fortran-tags."
   (string= (concat VERSION "\n")
-           (shell-command-to-string
+           (fortran-tags-shell-command
             (concat "head -n 1 " fortran-tags-path))))
 
 (defun fortran-word-at-point (&optional lowercase)
-  "Return the Fortran word at point (in lowercase if requested)."
+  "Return Fortran word at point (in lowercase if LOWERCASE)."
   (let (p1 p2)
     (save-excursion
       (progn
@@ -76,8 +136,10 @@ current version of Fortran-tags."
           (t (buffer-substring-no-properties p1 p2)))))
 
 (defun goto-new-position (file line char)
-  "Go to the new position determined by FILE LINE CHAR and save
-the current buffer and position."
+  "Go to the new position determined by FILE LINE CHAR.
+
+Also, push the current buffer and position to
+'fortran-positions'."
   (unless (boundp 'fortran-buffers) (setq fortran-buffers (list)))
   (unless (boundp 'fortran-positions) (setq fortran-positions (list)))
   (push (current-buffer) fortran-buffers)
@@ -88,7 +150,7 @@ the current buffer and position."
                (string= (file-truename file)
                         (file-truename
                          (buffer-file-name (buffer-base-buffer)))))
-    (find-file file))
+    (find-file (concat fortran-tags-file-prefix file)))
   (goto-line (string-to-number line))
   (forward-char (string-to-number char)))
 
@@ -127,7 +189,7 @@ Return (TYPE NAME), or nil if not found."
         (if tmp
             (setq cur-scope (concat ":" (downcase (nth 1 tmp)) cur-scope))))))
   (if (or (not (save-excursion (nth 1 (f90-beginning-of-scope))))
-          (string= "" (shell-command-to-string
+          (string= "" (fortran-tags-shell-command
                        (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
                                fortran-tags-path))))
       ;; i) If (nth 1 (f90-beginning-of-scope)) returns zero, we have
@@ -156,32 +218,45 @@ Return (TYPE NAME), or nil if not found."
         (kill-buffer tmp-buffer))))
 
 (defun fortran-find-tag (&optional force-global)
-  "Find the definition of the word under the cursor. If found,
-move to the new position. If force-global is true, the search is
-performed by only scanning through variables with the module
-scope."
+  "Find the definition of word under cursor (globally if FORCE-GLOBAL).
+
+If found, move to the new position.  If force-global is true, the
+search is performed by only scanning through variables with the
+module scope."
   (interactive)
-  ;; Find the tags file
+  ;; Set values for the remote parameters
   (if (and (boundp 'fortran-tags-path)
-           (not (file-exists-p fortran-tags-path)))
-      (makunbound 'fortran-tags-path)) ; FORTAGS not present at the old location
+           (not (boundp 'fortran-tags-shell-prefix)))
+      (set-remote-location-parameters))
+  ;; If the tags file has moved, fortran-tags-path needs to be reset
+  (if (and (boundp 'fortran-tags-path)
+           (not (file-exists-p
+                 (concat fortran-tags-file-prefix fortran-tags-path))))
+      (makunbound 'fortran-tags-path))
+  ;; Find the tags file
   (unless (boundp 'fortran-tags-path)
     (setq fortran-tags-path (fortran-read-tags)))
+  ;; Set values for the remote parameters
+  (unless (boundp 'fortran-tags-shell-prefix)
+    (set-remote-location-parameters))
+  ;; Check if the tags file has been created with the most recent
+  ;; version of Fortran-tags
   (unless (boundp 'fortran-tags-version-ok)
     (setq fortran-tags-version-ok (check-fortran-tags-version)))
   (if (and (not fortran-tags-version-ok)
            (not (check-fortran-tags-version))) ; Recheck if changed
       (let ((tags-path fortran-tags-path))
         (makunbound 'fortran-tags-path)
-        (if (file-exists-p tags-path)
-            (error "Incorrect format (regenerate using the current version of Fortran-tags).")
-          (error (concat tags-path " does not exist.")))))
+        (if (file-exists-p (concat fortran-tags-file-prefix tags-path))
+            (error "Incorrect format (regenerate using the current version of Fortran-tags)")
+          (error (concat fortran-tags-file-prefix tags-path
+                         " does not exist.")))))
   ;; Find the definition
   (let ((WORD (fortran-word-at-point t)) scope scopes match i j)
     (setq alt-positions (list))
     (fortran-find-scope)
     (if (string= cur-scope "\n")
-        ;; We are a program construct that didn't start with the
+        ;; We are in a program construct that didn't start with the
         ;; 'program' keyword. Set cur-scope to :fortags_program_scope:
         ;; manually.
         (setq cur-scope ":fortags_program_scope:"))
@@ -202,7 +277,7 @@ scope."
                 ;; and so on.
                 (setq scope (concat ":" (nth j scopes) scope))
                 (setq j (1- j)))
-              (setq match (shell-command-to-string
+              (setq match (fortran-tags-shell-command
                            (concat "LC_ALL=C fgrep -m 1 \" "
                                    WORD " " scope " \" " fortran-tags-path)))
               (if (not (string= "" match))
@@ -214,9 +289,9 @@ scope."
       ;; If no match was found, go through all the definitions with the
       ;; module scope.
       (setq match (split-string
-                   (shell-command-to-string
-                    (concat "LC_ALL=C fgrep \" 0 " WORD
-                            " :\" " fortran-tags-path)) "\n"))
+                   (fortran-tags-shell-command
+                    (concat "LC_ALL=C fgrep \" 0 " WORD " :\" "
+                            fortran-tags-path)) "\n"))
       (if (not (string= "" (nth 0 match)))
           (progn
             (dolist (line (delete "" match))
@@ -241,9 +316,10 @@ scope."
                         (goto-char (pop fortran-positions)))))
 
 (defun fortran-goto-next ()
-  "If alt-positions is not empty, go to the next position,
-else force fortran-find-tag to search only through module level
-variables."
+  "If alt-positions is not empty, go to the next position.
+
+Otherwise, force 'fortran-find-tag' to search only through module
+level variables."
   (interactive)
   (unless (boundp 'alt-positions) (setq alt-positions (list)))
   (if (not alt-positions) (fortran-find-tag t)
@@ -254,49 +330,52 @@ variables."
         (setq alt-positions-counter 0)))))
 
 (defun fortran-find-proc-calls (&optional fast-search)
-  "Find all calls to the procedure under the cursor. If found,
+  "Find calls to procedure (using special regex if FAST-SEARCH).
+
+Find all calls to the Fortran procedure under cursor. If found,
 alt-positions is populated with the corresponding positions that
 can be cycled through with fortran-goto-next. Default is to use a
 general regex, while fast-search determines a specialized regex
 for subroutines or functions."
   (interactive)
   (unless (boundp 'fortran-tags-path)
-    (setq fortran-tags-path (fortran-read-tags)))
+    (setq fortran-tags-path (fortran-read-tags))
+    (set-remote-location-parameters))
   (let ((WORD (fortran-word-at-point))
         (match "")
         (src-file-paths
-         (shell-command-to-string
+         (fortran-tags-shell-command
           (concat
            "head -n 2 " fortran-tags-path " | tail -n 1 | xargs echo -n"))))
     (unless (string= WORD "")
       (cond
        ((string= "subroutine" fast-search)
         (setq match
-              (shell-command-to-string
+              (fortran-tags-shell-command
                (concat "LC_ALL=C egrep -Hn \"^ *call " WORD
-                       " *([(&]|$)\" " src-file-paths
-                       " | cut -f1,2 -d:"))))
+                       " *([(&]|$)\" " src-file-paths " | cut -f1,2 -d:"))))
        ((string= "function" fast-search)
         (setq match
-              (shell-command-to-string
+              (fortran-tags-shell-command
                (concat "LC_ALL=C egrep -Hn \"[=+/*(&\-] *" WORD
                        " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
        ((string= "type-bound" fast-search)
         (setq match
-              (shell-command-to-string
+              (fortran-tags-shell-command
                (concat "LC_ALL=C egrep -Hn \"%" WORD
                        " *[(&]\" " src-file-paths " | cut -f1,2 -d:"))))
        (t
         (setq match
               (concat
-               (shell-command-to-string
+               (fortran-tags-shell-command
                 (concat "LC_ALL=C egrep -Hni \"(^|[;&]) *call +" WORD
                         " *([(&;\!]|$)\" " src-file-paths " | cut -f1,2 -d:"))
-               (shell-command-to-string
+               (fortran-tags-shell-command
                 (concat "LC_ALL=C egrep -Hni \"([=+/*(%%&\-]|^) *" WORD
                         " *[(&]\" " src-file-paths " | cut -f1,2 -d:")))))))
     (when (string-match-p (regexp-quote "No such file or directory") match)
-      (error "A file that was previously present seems to be missing. Try regenerating the tags file."))
+      (error "A file that was previously present seems to be
+      missing.  Try regenerating the tags file"))
     (if (not (string= "" match))
         (let ((matches (delete "" (split-string match "\n"))) (files "")
               (num-files ""))
@@ -329,8 +408,9 @@ for subroutines or functions."
   (fortran-find-proc-calls "subroutine"))
 
 (defun fortran-find-proc-calls-func()
-  "Search only for function calls (excluding type-bound
-procedures)."
+  "Search only for function calls.
+
+Type-bound procedures are excluded from the search."
   (interactive)
   (fortran-find-proc-calls "function"))
 
