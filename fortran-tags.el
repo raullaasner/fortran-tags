@@ -120,6 +120,40 @@ current version of Fortran-tags."
            (fortran-tags-shell-command
             (concat "head -n 1 " fortran-tags-path))))
 
+(defun fortran-tags-initialize ()
+  "Initialize global variables.
+
+This function does not need to be explicitly called by the
+user. It is automatically called when certain functions are
+invoked."
+  ;; Set values for the remote parameters
+  (if (and (boundp 'fortran-tags-path)
+           (not (boundp 'fortran-tags-shell-prefix)))
+      (set-remote-location-parameters))
+  ;; If the tags file has moved, fortran-tags-path needs to be reset
+  (if (and (boundp 'fortran-tags-path)
+           (not (file-exists-p
+                 (concat fortran-tags-file-prefix fortran-tags-path))))
+      (makunbound 'fortran-tags-path))
+  ;; Find the tags file
+  (unless (boundp 'fortran-tags-path)
+    (setq fortran-tags-path (fortran-read-tags)))
+  ;; Set values for the remote parameters
+  (unless (boundp 'fortran-tags-shell-prefix)
+    (set-remote-location-parameters))
+  ;; Check if the tags file has been created with the most recent
+  ;; version of Fortran-tags
+  (unless (boundp 'fortran-tags-version-ok)
+    (setq fortran-tags-version-ok (check-fortran-tags-version)))
+  (if (and (not fortran-tags-version-ok)
+           (not (check-fortran-tags-version))) ; Recheck if changed
+      (let ((tags-path fortran-tags-path))
+        (makunbound 'fortran-tags-path)
+        (if (file-exists-p (concat fortran-tags-file-prefix tags-path))
+            (error "Incorrect format (regenerate using the current version of Fortran-tags)")
+          (error (concat fortran-tags-file-prefix tags-path
+                         " does not exist."))))))
+
 (defun fortran-word-at-point (&optional lowercase)
   "Return Fortran word at point (in lowercase if LOWERCASE)."
   (let (p1 p2)
@@ -224,33 +258,7 @@ If found, move to the new position.  If force-global is true, the
 search is performed by only scanning through variables with the
 module scope."
   (interactive)
-  ;; Set values for the remote parameters
-  (if (and (boundp 'fortran-tags-path)
-           (not (boundp 'fortran-tags-shell-prefix)))
-      (set-remote-location-parameters))
-  ;; If the tags file has moved, fortran-tags-path needs to be reset
-  (if (and (boundp 'fortran-tags-path)
-           (not (file-exists-p
-                 (concat fortran-tags-file-prefix fortran-tags-path))))
-      (makunbound 'fortran-tags-path))
-  ;; Find the tags file
-  (unless (boundp 'fortran-tags-path)
-    (setq fortran-tags-path (fortran-read-tags)))
-  ;; Set values for the remote parameters
-  (unless (boundp 'fortran-tags-shell-prefix)
-    (set-remote-location-parameters))
-  ;; Check if the tags file has been created with the most recent
-  ;; version of Fortran-tags
-  (unless (boundp 'fortran-tags-version-ok)
-    (setq fortran-tags-version-ok (check-fortran-tags-version)))
-  (if (and (not fortran-tags-version-ok)
-           (not (check-fortran-tags-version))) ; Recheck if changed
-      (let ((tags-path fortran-tags-path))
-        (makunbound 'fortran-tags-path)
-        (if (file-exists-p (concat fortran-tags-file-prefix tags-path))
-            (error "Incorrect format (regenerate using the current version of Fortran-tags)")
-          (error (concat fortran-tags-file-prefix tags-path
-                         " does not exist.")))))
+  (fortran-tags-initialize)
   ;; Find the definition
   (let ((WORD (fortran-word-at-point t)) scope scopes match i j)
     (setq alt-positions (list))
@@ -338,9 +346,7 @@ can be cycled through with fortran-goto-next. Default is to use a
 general regex, while fast-search determines a specialized regex
 for subroutines or functions."
   (interactive)
-  (unless (boundp 'fortran-tags-path)
-    (setq fortran-tags-path (fortran-read-tags))
-    (set-remote-location-parameters))
+  (fortran-tags-initialize)
   (let ((WORD (fortran-word-at-point))
         (match "")
         (src-file-paths
