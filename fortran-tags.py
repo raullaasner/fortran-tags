@@ -475,6 +475,8 @@ parser.add_argument('-g', '--generate', nargs='+', metavar='FILE',
                     help='Generate or update the tags file.')
 parser.add_argument('-o', '--output', nargs=1,
                     help='Target file for tags (default: FORTAGS)')
+parser.add_argument('-v', '--version', action='version', version=VERSION,
+                    help='Print version number')
 
 if len(sys.argv) < 2:
     parser.parse_args('-h'.split())

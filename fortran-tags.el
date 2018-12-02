@@ -64,8 +64,6 @@
 
 ;;; Code:
 
-(setq VERSION "1.5.1")
-
 (defun set-remote-location-parameters ()
   "Set global parameters for remote connections.
 
@@ -116,7 +114,7 @@ set again."
 
 Return true if the first line of the tags file matches the
 current version of Fortran-tags."
-  (string= (concat VERSION "\n")
+  (string= (fortran-tags-shell-command "fortran-tags.py -v")
            (fortran-tags-shell-command
             (concat "head -n 1 " fortran-tags-path))))
 
