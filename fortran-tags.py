@@ -1,45 +1,45 @@
 #!/usr/bin/env python3
-# This script contains two main functions:
-#  1) Generating a tags file. The scope and position of every variable
-#     and procedure are determined. Once the initial tags file has
-#     been generated, subsequent calls produce only minimal changes,
-#     which means that it is cheap to call this function every time a
-#     software project is opened.
-#  2) Finding the current scope. The same function is called as for
-#     generating the tags file except that the definition finding
-#     parts are turned off. It can be invoked by fortran-find-scope in
-#     fortran-tags.el, which provides the buffer contents of a source
-#     file up to the cursor position in the form of stdin and receives
-#     the scope at that position after it has been determined. It is
-#     only invoked if fortran-find-scope is unable to find the scope
-#     on its own for some reason.
+"""Main driver for processing Fortran source code.
 
-# FORMAT OF THE TAGS FILE
-#
-# The first line is the version number, which is required for deleting
-# and regenerating the tags file in case a newer version of
-# Fortra-tags is used. The second line contains the paths of all the
-# source files included in the tags file and is used mainly by
-# fortran-find-proc-calls. The rest of the lines contain 6 or 7 words,
-# which have the following meaning:
-#
-# 1 - Absolute path to the source file
-# 2 - Scope level. Counts the colons in the scope, which has the
-#     format :a:b: (scope level is 3 for :a:b:). As an exception,
-#     module wide variables are defined to have the scope level of
-#     0. This allows to distinguish them from the local variables of
-#     an external procedure which would otherwise have the same
-#     scope. The the latter are never visible to the outside, while
-#     the converse is not true for module wide variables. This
-#     definition of the scope level allows fortran-find-tag to easily
-#     grep for the correct variables.
-# 3 - Variable or procedure name
-# 4 - Scope of the variable or procedure
-# 5 - Line number
-# 6 - Position of the definition on the line
-# 7 - If present, marks the the number of lines corresponding to a
-#     source file in the tags file, i.e., this many lines can be
-#     copied to the new tags file if the source file is unmodified.
+The primary function in this file is process_input, which serves two
+purposes:
+1) Generate a tags file. Determine the scope and position of every
+   variable and procedure. Once the initial tags file has been
+   generated, subsequent calls produce only minimal changes and it is
+   thus cheap to repeatedly call this function.
+2) Find the current scope. In this mode, the definition finding parts
+   are turned off. It is invoked from fortran-find-scope in
+   fortran-tags.el, which provides the buffer contents of a source
+   file up to the cursor position as input and receives the scope at
+   that position as output. It is only invoked if fortran-find-scope
+   is unable to find the scope on its own for some reason.
+
+Format of the tags file
+ -----------------------
+The first line is the version number, which is required for deleting
+and regenerating the tags file in case of version mismatch with
+Fortra-tags. The second line contains the paths of all the source
+files included in the tags file and is used mainly by
+fortran-find-proc-calls. The rest of the lines contain 6 or 7 words,
+which have the following meaning:
+1 - Absolute path to the source file
+2 - Scope level is an integer corresponding to the number of colons in
+    the scope, which has the format :a:b:. As an exception, module
+    wide variables are defined to have a scope level of 0. This allows
+    to distinguish them from the local variables of an external
+    procedure which would otherwise have the same scope. The latter
+    are never visible to the outside, while the converse is not true
+    for module wide variables. This definition of the scope level
+    allows fortran-find-tag to easily grep for the correct variables.
+3 - Variable or procedure name
+4 - Scope of the variable or procedure
+5 - Line number
+6 - Position of the definition on the line
+7 - If present, marks the the number of lines corresponding to a
+    source file in the tags file, i.e., this many lines can be copied
+    to the new tags file if the source file is unmodified.
+
+"""
 
 import sys
 import os
