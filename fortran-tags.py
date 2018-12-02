@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-
-# Copyright (C) 2015-2018 Raul Laasner
-# This file is distributed under the terms of the GNU General Public
-# License, see 'LICENSE' in the root directory of the present
-# distribution or http://gnu.org/copyleft/gpl.txt .
-
 # This script contains two main functions:
 #  1) Generating a tags file. The scope and position of every variable
 #     and procedure are determined. Once the initial tags file has

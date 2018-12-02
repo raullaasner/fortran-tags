@@ -4,11 +4,6 @@
 ;; Keywords: languages, tags, fortran
 ;; Homepage: https://github.com/raullaasner/fortran-tags
 
-;; Copyright (C) 2015-2018 Raul Laasner
-;; This file is distributed under the terms of the GNU General Public
-;; License, see 'LICENSE' in the root directory of the present
-;; distribution or http://gnu.org/copyleft/gpl.txt .
-
 ;;; Commentary:
 
 ;; In short:
