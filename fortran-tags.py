@@ -47,6 +47,8 @@ import sys
 import os
 import re
 import argparse
+import codecs
+import inspect
 
 
 def clean_string(l):
@@ -530,9 +532,8 @@ if args.generate:
             try:
                 input_text = open(f, 'r').readlines()
             except UnicodeDecodeError:
-                from codecs import open as copen
-                input_text = copen(f, 'r', encoding='utf-8',
-                                   errors='ignore').readlines()
+                input_text = codecs.open(f, 'r', encoding='utf-8',
+                                         errors='ignore').readlines()
                 print(f"\rutf-8 codec can't fully decode {f}. "
                       'Skipping some characters.')
                 sys.stdout.write('\rProcessing input files ... '
@@ -540,9 +541,8 @@ if args.generate:
             try:
                 process_input(input_text, True, TAGS, os.path.abspath(f))
             except AttributeError as e:
-                from inspect import trace
-                line_raw = trace()[-1][0].f_locals['line_raw']
-                line_nr = trace()[-1][0].f_locals['line_nr']
+                line_raw = inspect.trace()[-1][0].f_locals['line_raw']
+                line_nr = inspect.trace()[-1][0].f_locals['line_nr']
                 print(f'\nError on line {os.path.abspath(f)}:{line_nr}:')
                 print(line_raw)
                 print(f'AttributeError: {e}')
