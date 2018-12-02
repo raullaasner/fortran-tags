@@ -41,12 +41,12 @@ which have the following meaning:
 
 """
 
+__version__ = '1.5.1'
+
 import sys
 import os
 import re
 import argparse
-
-VERSION = '1.5.1'
 
 
 def clean_string(l):
@@ -469,7 +469,7 @@ parser.add_argument('-g', '--generate', nargs='+', metavar='FILE',
                     help='Generate or update the tags file.')
 parser.add_argument('-o', '--output', nargs=1,
                     help='Target file for tags (default: FORTAGS)')
-parser.add_argument('-v', '--version', action='version', version=VERSION,
+parser.add_argument('-v', '--version', action='version', version=__version__,
                     help='Print version number')
 
 if len(sys.argv) < 2:
@@ -493,7 +493,7 @@ if args.generate:
     TAGS = []  # Work array for tags
     untouched = []  # Unmodified source files
     # STEP 1 - Scan the old tags file for changes
-    if os.path.exists(tags_path) and str(tags_old[0]) != VERSION+'\n':
+    if os.path.exists(tags_path) and str(tags_old[0]) != __version__+'\n':
         sys.stdout.write(f'Deleting {tags_path}, which was created with '
                          f'version {tags_old[0]}')
     elif os.path.exists(tags_path):
@@ -568,7 +568,7 @@ if args.generate:
         if filename not in untouched:
             TAGS[tmp] = f'{TAGS[tmp][0:-1]} {line_nr-tmp}\n'
     with open(tags_path, 'w') as tags_file:
-        tags_file.write(f'{VERSION}\n')
+        tags_file.write(f'{__version__}\n')
         tags_file.writelines(os.path.abspath(f)+' ' for f in args.generate)
         tags_file.write('\n')
         tags_file.writelines(TAGS)
