@@ -15,7 +15,7 @@ purposes:
    is unable to find the scope on its own for some reason.
 
 Format of the tags file
- -----------------------
+-----------------------
 The first line is the version number, which is required for deleting
 and regenerating the tags file in case of version mismatch with
 Fortra-tags. The second line contains the paths of all the source
@@ -43,21 +43,21 @@ which have the following meaning:
 
 __version__ = '1.5.1'
 
-import sys
-import os
-import re
 import argparse
 import codecs
 import inspect
+import os
+import re
+import sys
 
 
 def clean_string(l):
-    """Removes strings and comments from the line.
+    """Remove strings and comments from the line.
+
+    Since there are two delimiters for the character type that can be
+    nested, all combinations need to be considered.
 
     """
-    # Since there are two delimiters for the character type which can
-    # be nested, all combinations need to be considered.
-
     # lock[0] (lock[1]) is True if the previous line didn't have a
     # matching single (double) quote
     global lock
@@ -97,8 +97,11 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
     """Find definitions and their scopes.
 
     If not find_definitions, then only find the scopes.
-
     """
+    # Rename filepath!
+    # Remove find_definitions; use if TAGS instead!
+    # Rename TAGS!
+    # In fact, rename most variables!
     global lock
     # Current scope
     global scope
@@ -214,7 +217,7 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
                         if scope_count == 1:
                             scope = ':fortags_program_scope:'
                             scope_count = 2
-                        r = '([ ,:&\t]|^)' + name + r'([ ,(\[=!\*\t]|$)'
+                        r = '([ ,:&\t)]|^)' + name + r'([ ,(\[=!\*\t]|$)'
                         m = re.search(r, line_raw)
                         position = int((m.start()+m.end())/2)
                         TAGS.append(f'{filepath} {scope_count} {name} {scope} '
@@ -466,7 +469,8 @@ def process_input(input_text, find_definitions, TAGS='', filepath=''):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', '--find-scope', action='store_true',
-                    help='Return the current scope based on text from stdin')
+                    help='Return the current scope based on text from '
+                    'stdin')
 parser.add_argument('-g', '--generate', nargs='+', metavar='FILE',
                     help='Generate or update the tags file.')
 parser.add_argument('-o', '--output', nargs=1,
@@ -506,16 +510,16 @@ if args.generate:
             words = tags_old[line_nr].split()
             filename = words[0]
             shift = int(words[-1])
-            if filename in input_files and (
-                    os.path.getctime(filename) < os.path.getctime(tags_path)):
+            if filename in input_files and (os.path.getctime(filename) <
+                                            os.path.getctime(tags_path)):
                 TAGS.extend(tags_old[line_nr:line_nr+shift])
                 untouched.append(filename)
             line_nr += shift
         # Include unmodified files devoid of any declarations
         old_filenames = tags_old[1].split()
         for filename in input_files:
-            if filename in old_filenames and filename not in untouched and (
-                    os.path.getctime(filename) < os.path.getctime(tags_path)):
+            if filename in old_filenames and filename not in untouched and (os.path.getctime(filename) <
+                                                                            os.path.getctime(tags_path)):
                 untouched.append(filename)
         sys.stdout.write(f'\rScanning {tags_path} for changes ... done\n')
         sys.stdout.flush()
