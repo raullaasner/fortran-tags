@@ -217,7 +217,7 @@ Return (TYPE NAME), or nil if not found."
             (setq cur-scope (concat ":" (downcase (nth 1 tmp)) cur-scope))))))
   (if (or (not (save-excursion (nth 1 (f90-beginning-of-scope))))
           (string= "" (fortran-tags-shell-command
-                       (concat "LC_ALL=C fgrep -m 1 \" " cur-scope " \" "
+                       (concat "LC_ALL=C grep -F -m 1 \" " cur-scope " \" "
                                fortran-tags-path))))
       ;; i) If (nth 1 (f90-beginning-of-scope)) returns zero, we have
       ;; zero scope. In this case it is necessary to check whether we
@@ -279,7 +279,7 @@ module scope."
                 (setq scope (concat ":" (nth j scopes) scope))
                 (setq j (1- j)))
               (setq match (fortran-tags-shell-command
-                           (concat "LC_ALL=C fgrep -m 1 \" "
+                           (concat "LC_ALL=C grep -F -m 1 \" "
                                    WORD " " scope " \" " fortran-tags-path)))
               (if (not (string= "" match))
                   (let ((words (split-string match)))
@@ -291,7 +291,7 @@ module scope."
       ;; module scope.
       (setq match (split-string
                    (fortran-tags-shell-command
-                    (concat "LC_ALL=C fgrep \" 0 " WORD " :\" "
+                    (concat "LC_ALL=C grep -F \" 0 " WORD " :\" "
                             fortran-tags-path)) "\n"))
       (if (not (string= "" (nth 0 match)))
           (progn
